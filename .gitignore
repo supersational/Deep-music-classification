@@ -1,3 +1,7 @@
+data/val.pkl
+data/train.pkl
+
+.DS_Store
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
