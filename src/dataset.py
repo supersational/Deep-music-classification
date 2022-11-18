@@ -1,7 +1,9 @@
-import torch
-import numpy as np
-from torch.utils import data
 import pickle
+
+import numpy as np
+import torch
+from torch.utils import data
+
 
 class GTZAN(data.Dataset):
     def __init__(self, dataset_path):
@@ -78,5 +80,19 @@ if __name__ == '__main__':
     # Create the dataset
     dataset = GTZAN('../data/train.pkl')
     # Get a random element of the dataset
-    datapoint_to_file(dataset[np.random.randint(0, len(dataset))])
+    # datapoint_to_file(dataset[np.random.randint(0, len(dataset))])
     
+    labels = set()
+    label_ids = []
+    while True:
+        idx = np.random.randint(0, len(dataset))
+        filename, spectrogram, label, samples = dataset[idx]
+        if label not in labels:
+            labels.add(label)
+            label_ids.append(idx)
+        if len(labels) == 10:
+            break
+    print(labels)
+    print(label_ids)
+    dataset_trimmed = [dataset[idx] for idx in label_ids]
+    pickle.dump(dataset_trimmed, open('../data/train_trimmed.pkl', 'wb'))
