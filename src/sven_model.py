@@ -6,6 +6,19 @@ from torch import nn
 import pickle
 from torch.nn import functional as F
 from dataset import GTZAN
+from datetime import datetime
+from tqdm import tqdm
+from torchmetrics import Accuracy
+
+import wandb
+
+def setup_wandb():
+
+    kwargs = {'name': datetime.now().strftime("shallow/%m-%d/%H-%M-%S"), 'project': "ADL-Music-Classication",
+              'settings': wandb.Settings(_disable_stats=True), 'reinit': True, 'mode': 'online'}
+    wandb.init(**kwargs)
+    wandb.save('*.txt')
+
 DEBUG = True
 
 dataset = GTZAN('../data/train_trimmed.pkl')
@@ -94,20 +107,25 @@ class CNN(nn.Module):
         if hasattr(layer, "weight"):
             nn.init.kaiming_normal_(layer.weight)
 
+if torch.cuda.is_available():
+    device = "cuda:0"
+else:
+    device = "cpu"
+
 num_classes = 10
-model = CNN(num_classes)
-# print(spectrogram)
-print("TEST ON BATCH SIZE 1")
-output = model(spectrogram[None, :])
-print(output)
-# print(spectrogram.dtype)
-spectrograms = [spectrogram[None, :] for filename, spectrogram, label, samples in dataset]
-spectrograms = torch.cat(spectrograms)
-# print(spectrograms)
-# model(torch.Tensor([spectrogram for filename, spectrogram, label, samples in dataset]))
-print("TEST ON BATCH SIZE 10")
-output = model(spectrograms) 
-print(output)
+model = CNN(num_classes).to(device)
+# # print(spectrogram)
+# print("TEST ON BATCH SIZE 1")
+# output = model(spectrogram[None, :].to(device))
+# print(output)
+# # print(spectrogram.dtype)
+# spectrograms = [spectrogram[None, :] for filename, spectrogram, label, samples in dataset]
+# spectrograms = torch.cat(spectrograms)
+# # print(spectrograms)
+# # model(torch.Tensor([spectrogram for filename, spectrogram, label, samples in dataset]))
+# print("TEST ON BATCH SIZE 10")
+# output = model(spectrograms)
+# print(output)
 
 # sys.exit()
 DEBUG = False
@@ -121,13 +139,16 @@ Adam optimization [KB14] with beta1=0.9, beta2=0.999,
 epsilon=1e−08 and a learning rate of 0.00005."""
 
 # train model using categorical cross entropy
-criterion = nn.CrossEntropyLoss()
+criterion = nn.CrossEntropyLoss().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.00005, betas=(0.9, 0.999), eps=1e-08)
-
+accuracy = Accuracy()
 
 # train model
-epochs = 10
-for epoch in range(epochs):
+epochs = 300
+val_every_epoch = 1
+
+setup_wandb()
+for epoch in tqdm(range(epochs)):
     # shuffle dataset
     N = len(dataset)
 
@@ -135,25 +156,40 @@ for epoch in range(epochs):
     indices = np.arange(N)
     indices = np.random.permutation(indices)
 
-    for filename, spectrogram, label, samples in (dataset[i] for i in indices):
+    losses = []
+    preds = torch.zeros(N)
+    labels = torch.zeros(N)
+
+    index = 0
+    for filename, spectrogram, label, samples in [dataset[i] for i in indices]:
         # forward pass
-        output = model(spectrogram[None, :])
+        output = model(spectrogram[None, :].to(device))
+        pred_class = torch.argmax(output)
+
+        preds[index] = pred_class
         
         # one hot encode label
-        label_onehot = nn.functional.one_hot(torch.tensor(label), num_classes=num_classes)[None, :].float()
+        label_onehot = nn.functional.one_hot(torch.tensor(label), num_classes=num_classes)[None, :].float().to(device)
 
+
+        labels[index] = torch.tensor(label)
         # calculate loss
         loss = criterion(output, label_onehot)
-        print(label, loss, output)
+        # print(label, loss, output)
+        losses.append(loss.cpu().detach().numpy())
 
         # l1 normalization
         # l1_norm = torch.norm(model.fc1.weight, p=1)
         # print(l1_norm)
-        
+        index += 1
+    print(labels, preds)
+    # backpropagate
+    loss.backward()
+    # update weights
+    optimizer.step()
+    # zero gradients
+    optimizer.zero_grad()
 
-        # backpropagate
-        loss.backward()
-        # update weights
-        optimizer.step()
-        # zero gradients
-        optimizer.zero_grad()
+    wandb.log({"train/epoch_loss": np.mean(losses)})
+    wandb.log({"train/epoch_accuracy": accuracy(preds.int(), labels.int())})
+

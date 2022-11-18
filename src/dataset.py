@@ -4,7 +4,7 @@ import wget
 import numpy as np
 import torch
 from torch.utils import data
-
+import os
 
 class GTZAN(data.Dataset):
     def __init__(self, dataset_path, download = True):
@@ -30,7 +30,8 @@ class GTZAN(data.Dataset):
             os.chdir(os.path.dirname(dataset_path))
 
             _, filename = os.path.split(dataset_path)
-
+            print(filename)
+            print(os.getcwd())
             if filename == "val.pkl":
                 wget.download(val_link)
             elif filename == "train.pkl":
