@@ -109,7 +109,7 @@ print("TEST ON BATCH SIZE 10")
 output = model(spectrograms) 
 print(output)
 
-sys.exit()
+# sys.exit()
 DEBUG = False
 # create batches
 dataset = GTZAN('../data/train.pkl')
