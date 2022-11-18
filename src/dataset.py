@@ -1,4 +1,5 @@
 import pickle
+import wget
 
 import numpy as np
 import torch
@@ -6,7 +7,7 @@ from torch.utils import data
 
 
 class GTZAN(data.Dataset):
-    def __init__(self, dataset_path):
+    def __init__(self, dataset_path, download = True):
         """
         Given the dataset path, create the GTZAN dataset. Creates the variable
         self.dataset which is a list of 4-element tuples, each of the form
@@ -20,7 +21,29 @@ class GTZAN(data.Dataset):
         Args:
             dataset_path (str): Path to train.pkl or val.pkl
         """
+
+        train_link = "https://archive.org/download/train_202211/train.pkl"
+        val_link   = "https://archive.org/download/train_202211/val.pkl"
+
+        if not os.path.exists(dataset_path) and download:
+            working_dir = os.getcwd()
+            os.chdir(os.path.dirname(dataset_path))
+
+            _, filename = os.path.split(dataset_path)
+
+            if filename == "val.pkl":
+                wget.download(val_link)
+            elif filename == "train.pkl":
+                wget.download(train_link)
+            else:
+                raise NotImplementedError(f"{filename} is not an available download")
+
+            os.chdir(working_dir)
+
         self.dataset = pickle.load(open(dataset_path, 'rb'))
+
+
+
 
     def __getitem__(self, index):
         """
