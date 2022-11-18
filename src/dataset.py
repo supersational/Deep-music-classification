@@ -47,3 +47,36 @@ class GTZAN(data.Dataset):
             len(self.dataset) (int): the length of the list of 4-element tuples.
         """
         return len(self.dataset)
+
+def datapoint_to_file(datapoint):
+        filename, spectrogram, label, samples = datapoint
+        # filename, spectrogram, label, samples = dataset[0]
+        print('Filename: {}'.format(filename))
+        # decrease the volume of the audio
+        samples = samples / (4*1024.0)
+        # Write samples to a .wav file
+        import scipy.io.wavfile as wav
+        wav.write(filename, 22050, samples)
+        # Write spectrogram to a .png file
+        import matplotlib.pyplot as plt
+        plt.imsave(filename+'.png', spectrogram[0], cmap='gray')
+
+# Extensions (recommended)
+# - batch norm
+# - mixup   - splice two spectrograms together and label them as the average of the two labels
+
+## MR comments
+# - extension only have to be 0.1 percent better
+# - can submit 'best' version of extension model
+# - paper was submitted to a B-class venue
+# - if you do five shit extensions that sucks but if you do one really cool extra extension then won't get marked down
+
+if __name__ == '__main__':
+    # Set to script directory
+    import os
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    # Create the dataset
+    dataset = GTZAN('../data/train.pkl')
+    # Get a random element of the dataset
+    datapoint_to_file(dataset[np.random.randint(0, len(dataset))])
+    
