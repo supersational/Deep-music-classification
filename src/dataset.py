@@ -102,21 +102,25 @@ if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     # Create the dataset
-    dataset = GTZAN('../data/train.pkl')
+    setname = 'train'
+    dataset = GTZAN('../data/'+setname+'.pkl')
     # Get a random element of the dataset
     # datapoint_to_file(dataset[np.random.randint(0, len(dataset))])
     
-    labels = set()
     label_ids = []
-    while True:
-        idx = np.random.randint(0, len(dataset))
-        filename, spectrogram, label, samples = dataset[idx]
-        if label not in labels:
-            labels.add(label)
-            label_ids.append(idx)
-        if len(labels) == 10:
-            break
+    print('starting loop', setname)
+    for rep in range(5):
+        labels = set()
+        while True:
+            idx = np.random.randint(0, len(dataset))
+            filename, spectrogram, label, samples = dataset[idx]
+            if label not in labels:
+                labels.add(label)
+                label_ids.append(idx)
+            if len(labels) == 10:
+                break
+
     print(labels)
-    print(label_ids)
+    print(len(set(label_ids)))
     dataset_trimmed = [dataset[idx] for idx in label_ids]
-    pickle.dump(dataset_trimmed, open('../data/train_trimmed.pkl', 'wb'))
+    pickle.dump(dataset_trimmed, open('../data/'+setname+'_trimmed.pkl', 'wb'))
