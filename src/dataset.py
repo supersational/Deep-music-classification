@@ -1,6 +1,7 @@
 import pickle
 import wget
 
+import torch.nn as nn
 import numpy as np
 import torch
 from torch.utils import data
@@ -73,6 +74,51 @@ class GTZAN(data.Dataset):
             len(self.dataset) (int): the length of the list of 4-element tuples.
         """
         return len(self.dataset)
+
+    def get_batch_indices(self, batch_size, random_seed=42):
+        """
+        Returns a list of indices that can be used to create batches of data.
+        """
+        if random_seed:
+            np.random.seed(random_seed)
+
+        # shuffle dataset
+        N = len(self)
+
+        # generate & shuffle indices
+        indices = np.arange(N)
+        indices = np.random.permutation(indices)
+        index = 0
+        while True:
+            if index + batch_size > N:
+                # shuffle dataset
+                indices = np.arange(N)
+                indices = np.random.permutation(indices)
+                index = 0
+            batch_indices = indices[index:index+batch_size]
+            index += batch_size
+            # print(batch_indices)
+            yield batch_indices
+
+    def get_batches(self, batch_size, num_batches=None, random_seed=None):
+        """
+        Returns a generator that yields batches of data from the dataset.
+        """
+        batch_num = 0
+        num_classes = 2
+        batch_indices = self.get_batch_indices(batch_size, random_seed)
+        while True:
+            batch_data = [self[i] for i in next(batch_indices)]
+            spectrograms = torch.stack([spectrogram for filename, spectrogram, label, samples in batch_data])
+
+            # convert label to one hot (cat instead of stack because don't want to add extra dimension)
+            label_classes = torch.LongTensor([label % num_classes for filename, spectrogram, label, samples in batch_data])
+            labels = nn.functional.one_hot(label_classes, num_classes=num_classes).float()
+            yield spectrograms, labels
+            batch_num += 1
+            if num_batches and batch_num >= num_batches:
+                break
+
 
 def datapoint_to_file(datapoint):
         filename, spectrogram, label, samples = datapoint
