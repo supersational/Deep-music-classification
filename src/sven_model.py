@@ -13,14 +13,14 @@ from torchmetrics import Accuracy
 USE_WANDB = False
 if USE_WANDB:
     import wandb
+    def setup_wandb():
+
+        kwargs = {'name': datetime.now().strftime("shallow/%m-%d/%H-%M-%S"), 'project': "ADL-Music-Classication",
+                'settings': wandb.Settings(_disable_stats=True), 'reinit': True, 'mode': 'online'}
+        wandb.init(**kwargs)
+        wandb.save('*.txt')
     setup_wandb()
 
-def setup_wandb():
-
-    kwargs = {'name': datetime.now().strftime("shallow/%m-%d/%H-%M-%S"), 'project': "ADL-Music-Classication",
-              'settings': wandb.Settings(_disable_stats=True), 'reinit': True, 'mode': 'online'}
-    wandb.init(**kwargs)
-    wandb.save('*.txt')
 
 DEBUG = True
 
