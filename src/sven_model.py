@@ -10,7 +10,10 @@ from datetime import datetime
 from tqdm import tqdm
 from torchmetrics import Accuracy
 
-import wandb
+USE_WANDB = False
+if USE_WANDB:
+    import wandb
+    setup_wandb()
 
 def setup_wandb():
 
@@ -35,6 +38,7 @@ class CNN(nn.Module):
             kernel_size=(10, 23),
             padding='same'
         )
+
         self.initialise_layer(self.conv1)
         self.pool1 = nn.MaxPool2d(kernel_size=(1, 20))
         
@@ -147,7 +151,6 @@ accuracy = Accuracy()
 epochs = 300
 val_every_epoch = 1
 
-setup_wandb()
 for epoch in tqdm(range(epochs)):
     # shuffle dataset
     N = len(dataset)
@@ -190,6 +193,8 @@ for epoch in tqdm(range(epochs)):
     # zero gradients
     optimizer.zero_grad()
 
-    wandb.log({"train/epoch_loss": np.mean(losses)})
-    wandb.log({"train/epoch_accuracy": accuracy(preds.int(), labels.int())})
+    if USE_WANDB: wandb.log({"train/epoch_loss": np.mean(losses)})
+    else: print("train/epoch_loss", np.mean(losses))
+    if USE_WANDB: wandb.log({"train/epoch_accuracy": accuracy(preds.int(), labels.int())})
+    else: print("train/epoch_accuracy", accuracy(preds.int(), labels.int()))
 
