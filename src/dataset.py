@@ -105,7 +105,7 @@ class GTZAN(data.Dataset):
         Returns a generator that yields batches of data from the dataset.
         """
         batch_num = 0
-        num_classes = 2
+        num_classes = 10
         batch_indices = self.get_batch_indices(batch_size, random_seed)
         while True:
             batch_data = [self[i] for i in next(batch_indices)]
