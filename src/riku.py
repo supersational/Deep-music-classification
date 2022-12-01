@@ -128,7 +128,7 @@ model = CNN(num_classes).to(device)
 # sys.exit()
 DEBUG = False
 # create batches
-dataset = GTZAN('../data/train_trimmed.pkl')
+dataset = GTZAN('../data/train.pkl')
 
 
 """All networks were trained towards
