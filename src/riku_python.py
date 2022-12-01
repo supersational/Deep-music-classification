@@ -23,8 +23,8 @@ else:
 print(f"Running with device: {device}")
 DEBUG = True
 
-dataset = GTZAN('../data/train_trimmed.pkl')
-dataset_val = GTZAN('../data/val_trimmed.pkl')
+dataset = GTZAN('../data/train.pkl')
+dataset_val = GTZAN('../data/val.pkl')
 
 N, N_val = len(dataset), len(dataset_val)
 filename, spectrogram, label, samples = dataset[0]
@@ -102,7 +102,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)#, betas=(0.9, 0.999),
 losses, losses_val = [], []
 n_classes = 10
 epoch_N = 300
-batch_size = 5
+batch_size = 20
 
 losses, val_losses = [], []
 epoch_preds, val_preds = [], []
