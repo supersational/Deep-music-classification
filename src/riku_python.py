@@ -15,10 +15,16 @@ from torchmetrics import Accuracy
 import matplotlib.pyplot as plt
 
 
+if torch.cuda.is_available():
+    device = "cuda"
+else:
+    device = "cpu"
+
+print(f"Running with device: {device}")
 DEBUG = True
 
-dataset = GTZAN('/Users/zs18656/Documents/ADL DW COPY/data/train_trimmed.pkl')
-dataset_val = GTZAN('/Users/zs18656/Documents/ADL DW COPY/data/val_trimmed.pkl')
+dataset = GTZAN('../data/train_trimmed.pkl')
+dataset_val = GTZAN('../data/val_trimmed.pkl')
 
 N, N_val = len(dataset), len(dataset_val)
 filename, spectrogram, label, samples = dataset[0]
@@ -90,7 +96,7 @@ def get_batch_ids(N, batch_size):
 print('Training Data Size: ', N)
 print('Testing Data Size: ', N_val)
 
-model = CNN(height=80, width=80, channels=1, class_count=10)
+model = CNN(height=80, width=80, channels=1, class_count=10).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)#, betas=(0.9, 0.999), eps=1e-08)
 losses, losses_val = [], []
@@ -113,8 +119,8 @@ for epoch in tqdm(range(epoch_N)):
             label_i_tensor = torch.zeros(n_classes)
             filename_i, spectrogram_i, label_i, samples_i = dataset[i]
             label_i_tensor[label_i] = 1
-            pred = model.forward(spectrogram_i)
-            batch_loss += criterion(pred, label_i_tensor)
+            pred = model.forward(spectrogram_i.to(device))
+            batch_loss += criterion(pred, label_i_tensor.to(device))
 
             class_preds.append(torch.argmax(pred))
             class_trues.append(label_i)
@@ -136,8 +142,8 @@ for epoch in tqdm(range(epoch_N)):
         filename_i, spectrogram_i, label_i, samples_i = dataset_val[i]
         label_i_tensor[label_i] = 1
         with torch.no_grad():
-            pred = model.forward(spectrogram_i)
-        val_loss += criterion(pred, label_i_tensor)
+            pred = model.forward(spectrogram_i.to(device))
+        val_loss += criterion(pred, label_i_tensor.to(device))
 
         class_preds.append(torch.argmax(pred))
         val_trues.append(label_i)
@@ -147,15 +153,18 @@ for epoch in tqdm(range(epoch_N)):
 
 TC_loss_tr, TC_loss_te = [], []
 for i in losses:
-    TC_loss_tr.append(i.detach().numpy())
+    TC_loss_tr.append(i.cpu().detach().numpy())
 for i in val_losses:
-    TC_loss_te.append(i.detach().numpy())
+    TC_loss_te.append(i.cpu().detach().numpy())
 
 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 4))
 axes[0].plot((TC_loss_tr), label = 'train')
 axes[1].plot((TC_loss_te), label = 'test')
 axes[0].legend()
 axes[1].legend()
+
+plt.savefig('../results/losses.png')
+plt.close()
 
 n_batchs = int(N/batch_size)
 print('final train loss: ', np.sum(TC_loss_tr[-n_batchs:-1]))
@@ -165,7 +174,7 @@ epoch_accs = []
 for epoch in range(epoch_N):
     hits = 0
     for i in range(N):
-        pred_i = epoch_preds[epoch][i].numpy()
+        pred_i = epoch_preds[epoch][i].cpu().numpy()
         true_i = epoch_trues[epoch][i]
         if int(pred_i) == int(true_i):
             hits += 1
@@ -175,7 +184,7 @@ val_accs = []
 for epoch in range(epoch_N):
     hits = 0
     for i in range(N_val):
-        pred_i = val_preds[epoch][i].numpy()
+        pred_i = val_preds[epoch][i].cpu().numpy()
         if pred_i == val_trues[i]:
             hits += 1
 #             print(hits)
@@ -188,3 +197,6 @@ plt.xlabel('Epoch')
 plt.legend()
 print('Train Acc: ', epoch_accs[-1])
 print('Test Acc: ', val_accs[-1])
+
+plt.savefig('../results/accuracies.png')
+plt.close()
