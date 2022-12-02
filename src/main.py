@@ -61,7 +61,7 @@ if __name__ == "__main__":
             optimizer.step()
             # zero gradients
             optimizer.zero_grad()
-            losses.append(batch_loss.cpu().detach().numpy())
+            losses.append(batch_loss.cpu().detach())
         train_success_fail = np.array(class_preds) == np.array(class_trues)
         train_accuracies.append(train_success_fail[train_success_fail].shape[0] / train_success_fail.shape[0])
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
             class_preds.append(torch.argmax(pred).cpu().detach())
             val_trues.append(label_i)
 
-        val_losses.append(val_loss.cpu().detach().numpy())
+        val_losses.append(val_loss.cpu().detach())
         val_success_fail = np.array(class_preds) == np.array(val_trues)
         val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
 
