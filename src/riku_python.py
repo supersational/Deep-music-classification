@@ -108,7 +108,10 @@ losses, val_losses = [], []
 # epoch_preds, val_preds = [], []
 # epoch_trues = []
 train_accuracies, val_accuracies = [], []
-for epoch in tqdm(range(epoch_N)):
+pbar = tqdm(range(epoch_N))
+
+for epoch in pbar:
+    pbar.set_description(f"Dimensions of losses:{len(losses)}, memory used: {sys.getsizeof(losses)}")
     #     TRAINING DATA EVALUATION + TRAINING
     #     epoch_loss = 0
     class_preds, class_trues = [], []
@@ -130,9 +133,10 @@ for epoch in tqdm(range(epoch_N)):
         optimizer.step()
         # zero gradients
         optimizer.zero_grad()
-        losses.append(batch_loss)
+        losses.append(batch_loss.cpu().detach().numpy())
     train_success_fail = np.array(class_preds) == np.array(class_trues)
     train_accuracies.append(train_success_fail[train_success_fail].shape[0] / train_success_fail.shape[0])
+    # print(f"train accuracy: {train_accuracies}")
     # epoch_preds.append(class_preds)
     # epoch_trues.append(class_trues)
 
@@ -150,25 +154,10 @@ for epoch in tqdm(range(epoch_N)):
         class_preds.append(torch.argmax(pred).cpu().detach())
         val_trues.append(label_i)
 
-    val_losses.append(val_loss)
+    val_losses.append(val_loss.cpu().detach().numpy())
     val_success_fail = np.array(class_preds) == np.array(val_trues)
     val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
     # val_preds.append(class_preds)
-
-TC_loss_tr, TC_loss_te = [], []
-for i in losses:
-    TC_loss_tr.append(i.cpu().detach().numpy())
-for i in val_losses:
-    TC_loss_te.append(i.cpu().detach().numpy())
-
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 4))
-axes[0].plot((TC_loss_tr), label = 'train')
-axes[1].plot((TC_loss_te), label = 'test')
-axes[0].legend()
-axes[1].legend()
-
-plt.savefig('../results/losses.png')
-plt.close()
 
 n_batchs = int(N/batch_size)
 print('final train loss: ', np.sum(TC_loss_tr[-n_batchs:-1]))
