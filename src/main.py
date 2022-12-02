@@ -33,8 +33,12 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)#, betas=(0.9, 0.999), eps=1e-08)
     losses, losses_val = [], []
     n_classes = 10
-    epoch_N = 30
-    batch_size = 32
+    epoch_N = 300
+
+    if device == "cuda":
+        batch_size = 128
+    else:
+        batch_size = 16
 
     losses, val_losses = [], []
     train_accuracies, val_accuracies = [0], [0]
@@ -84,8 +88,11 @@ if __name__ == "__main__":
         val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
 
     n_batchs = int(N/batch_size)
-    print('final train loss: ', np.sum(losses[-n_batchs:-1]))
-    print('final test loss: ', np.sum(val_loss[-n_batchs:-1]))
 
     plot_accuracies(train_accuracies, val_accuracies)
     plot_losses(losses, losses_val)
+
+    print('final train loss: ', losses[-1])
+    print('final test loss: ', val_losses[-1])
+
+
