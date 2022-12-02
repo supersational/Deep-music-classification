@@ -102,12 +102,12 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)#, betas=(0.9, 0.999),
 losses, losses_val = [], []
 n_classes = 10
 epoch_N = 300
-batch_size = 20
+batch_size = 32
 
 losses, val_losses = [], []
-epoch_preds, val_preds = [], []
-epoch_trues = []
-
+# epoch_preds, val_preds = [], []
+# epoch_trues = []
+train_accuracies, val_accuracies = [], []
 for epoch in tqdm(range(epoch_N)):
     #     TRAINING DATA EVALUATION + TRAINING
     #     epoch_loss = 0
@@ -122,7 +122,7 @@ for epoch in tqdm(range(epoch_N)):
             pred = model.forward(spectrogram_i.to(device))
             batch_loss += criterion(pred, label_i_tensor.to(device))
 
-            class_preds.append(torch.argmax(pred))
+            class_preds.append(torch.argmax(pred).cpu().detach())
             class_trues.append(label_i)
 
         batch_loss.backward()
@@ -131,8 +131,10 @@ for epoch in tqdm(range(epoch_N)):
         # zero gradients
         optimizer.zero_grad()
         losses.append(batch_loss)
-    epoch_preds.append(class_preds)
-    epoch_trues.append(class_trues)
+    train_success_fail = np.array(class_preds) == np.array(class_trues)
+    train_accuracies.append(train_success_fail[train_success_fail].shape[0] / train_success_fail.shape[0])
+    # epoch_preds.append(class_preds)
+    # epoch_trues.append(class_trues)
 
     #     VALIDATION DATA EVALUATION
     val_loss = 0
@@ -145,11 +147,13 @@ for epoch in tqdm(range(epoch_N)):
             pred = model.forward(spectrogram_i.to(device))
         val_loss += criterion(pred, label_i_tensor.to(device))
 
-        class_preds.append(torch.argmax(pred))
+        class_preds.append(torch.argmax(pred).cpu().detach())
         val_trues.append(label_i)
 
     val_losses.append(val_loss)
-    val_preds.append(class_preds)
+    val_success_fail = np.array(class_preds) == np.array(val_trues)
+    val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
+    # val_preds.append(class_preds)
 
 TC_loss_tr, TC_loss_te = [], []
 for i in losses:
@@ -170,33 +174,33 @@ n_batchs = int(N/batch_size)
 print('final train loss: ', np.sum(TC_loss_tr[-n_batchs:-1]))
 print('final test loss: ', np.sum(TC_loss_te[-n_batchs:-1]))
 
-epoch_accs = []
-for epoch in range(epoch_N):
-    hits = 0
-    for i in range(N):
-        pred_i = epoch_preds[epoch][i].cpu().numpy()
-        true_i = epoch_trues[epoch][i]
-        if int(pred_i) == int(true_i):
-            hits += 1
-    epoch_accs.append(hits/N)
+# epoch_accs = []
+# for epoch in range(epoch_N):
+#     hits = 0
+#     for i in range(N):
+#         pred_i = epoch_preds[epoch][i].cpu().numpy()
+#         true_i = epoch_trues[epoch][i]
+#         if int(pred_i) == int(true_i):
+#             hits += 1
+#     epoch_accs.append(hits/N)
+#
+# val_accs = []
+# for epoch in range(epoch_N):
+#     hits = 0
+#     for i in range(N_val):
+#         pred_i = val_preds[epoch][i].cpu().numpy()
+#         if pred_i == val_trues[i]:
+#             hits += 1
+# #             print(hits)
+#     val_accs.append(hits/N_val)
 
-val_accs = []
-for epoch in range(epoch_N):
-    hits = 0
-    for i in range(N_val):
-        pred_i = val_preds[epoch][i].cpu().numpy()
-        if pred_i == val_trues[i]:
-            hits += 1
-#             print(hits)
-    val_accs.append(hits/N_val)
-
-plt.plot(epoch_accs, label = 'Train')
-plt.plot(val_accs, label = 'Test')
+plt.plot(train_accuracies, label = 'Train')
+plt.plot(val_accuracies, label = 'Test')
 plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
 plt.legend()
-print('Train Acc: ', epoch_accs[-1])
-print('Test Acc: ', val_accs[-1])
+print('Train Acc: ', train_accuracies[-1])
+print('Test Acc: ', val_accuracies[-1])
 
 plt.savefig('../results/accuracies.png')
 plt.close()
