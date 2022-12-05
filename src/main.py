@@ -81,18 +81,22 @@ if __name__ == "__main__":
     for epoch in pbar:
         pbar.set_description(f"Train accuracy: {train_accuracies[-1]}")
         class_preds, class_trues = [], []
+        print(f'would be run for {len(get_batch_ids(N, batch_size))}x{batch_size} batches but limiting to 10')
 
-        for batch_ids in get_batch_ids(N, batch_size):
-            batch_loss = 0
-            for i in batch_ids:
-                label_i_tensor = torch.zeros(n_classes)
-                filename_i, spectrogram_i, label_i, samples_i = dataset[i]
-                label_i_tensor[label_i] = 1
-                pred = model.forward(spectrogram_i.to(device))
-                batch_loss += criterion(pred, label_i_tensor.to(device))
+        for batch_ids in get_batch_ids(N, batch_size)[:40]:
 
-                class_preds.append(torch.argmax(pred).cpu().detach())
-                class_trues.append(label_i)
+            spectrograms = torch.stack([spectrogram for filename, spectrogram, label, samples in [dataset[i] for i in batch_ids]])
+            label_classes = torch.LongTensor([label for filename, spectrogram, label, samples in [dataset[i] for i in batch_ids]])
+            labels = nn.functional.one_hot(label_classes, num_classes=10).float()
+
+            pred = model.forward(spectrograms.to(device))
+            batch_loss = criterion(pred, labels.to(device))
+            class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
+            class_trues.extend(label_classes)
+            # print(pred)
+            # print(labels)
+            # print(class_preds)
+            # print(len(class_preds))
 
             batch_loss.backward()
             # update weights
@@ -108,28 +112,31 @@ if __name__ == "__main__":
         #     VALIDATION DATA EVALUATION
         val_loss = 0
         class_preds, val_trues = [], []
-        for i in range(N_val):
-            label_i_tensor = torch.zeros(n_classes)
-            filename_i, spectrogram_i, label_i, samples_i = dataset_val[i]
-            label_i_tensor[label_i] = 1
-            with torch.no_grad():
-                pred = model.forward(spectrogram_i.to(device))
-            val_loss += criterion(pred, label_i_tensor.to(device))
+        print(f'would be run for {len(get_batch_ids(N_val, batch_size))}x{batch_size} batches but limiting to 10')
+        for batch_ids in get_batch_ids(N_val, batch_size)[:10]:
+            spectrograms = torch.stack([spectrogram for filename, spectrogram, label, samples in [dataset_val[i] for i in batch_ids]])
+            label_classes = torch.LongTensor([label for filename, spectrogram, label, samples in [dataset_val[i] for i in batch_ids]])
+            labels = nn.functional.one_hot(label_classes, num_classes=10).float()
 
-            class_preds.append(torch.argmax(pred).cpu().detach())
-            val_trues.append(label_i)
+            
+            with torch.no_grad():
+                pred = model.forward(spectrograms.to(device))
+            val_loss += criterion(pred, labels.to(device))
+            class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
+            val_trues.extend(label_classes)
+
 
         val_losses.append(val_loss.cpu().detach())
         val_success_fail = np.array(class_preds) == np.array(val_trues)
         val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
+
 
         if USE_WANDB:
             wandb.log({"train_loss":batch_loss.cpu().detach(),
                     "train_acc":train_accuracies[-1],
                     "val_loss":val_loss.cpu().detach(),
                     "val_acc":val_accuracies[-1]})
-        elif DEBUG:
-            print({"train_loss":batch_loss.cpu().detach(),
+        elif DEBUG:            print({"train_loss":batch_loss.cpu().detach(),
                     "train_acc":train_accuracies[-1],
                     "val_loss":val_loss.cpu().detach(),
                     "val_acc":val_accuracies[-1]})
