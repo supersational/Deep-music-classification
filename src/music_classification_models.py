@@ -45,7 +45,7 @@ class ShallowMusicCNN(nn.Module):
 
     def forward(self, spectograms: torch.Tensor, DEBUG=False) -> torch.Tensor:
         if DEBUG: print('input shape', spectograms.shape)
-        # leaky relu
+
         x1 = self.conv1(spectograms)
         if DEBUG: print('conv1', x1.shape)
         x1 = F.relu(x1)
@@ -176,12 +176,9 @@ class DeepMusicCNN(nn.Module):
         x_left, x_right = self.pool41(x_left), self.pool42(x_right)
 
         x_left = torch.flatten(x_left, start_dim=1)
-        x_left = torch.flatten(x_left)
-
         x_right = torch.flatten(x_right, start_dim=1)
-        x_right = torch.flatten(x_right)
 
-        x_conc = torch.cat((x_left, x_right))
+        x_conc = torch.cat((x_left, x_right), dim=1)
         x_conc = F.relu(self.fc1(x_conc))
         x_conc = self.fc2(x_conc)
         return x_conc
@@ -346,5 +343,4 @@ class FilterMusicCNN(nn.Module):
             nn.init.zeros_(layer.bias)
         if hasattr(layer, "weight"):
             nn.init.kaiming_normal_(layer.weight)
-
 
