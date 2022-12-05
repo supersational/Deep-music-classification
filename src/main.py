@@ -11,9 +11,9 @@ from music_classification_models import DeepMusicCNN, ShallowMusicCNN, FilterMus
 from utils import get_batch_ids, plot_losses, plot_accuracies
 
 
-def setup_wandb(model = "deep"):
+def setup_wandb(model = "deep", config = {}):
 
-    kwargs = {'name': datetime.now().strftime(f"{model}/%m-%d/%H-%M-%S"), 'project': "ADL-Music-Classication",
+    kwargs = {'name': datetime.now().strftime(f"{model}/%m-%d/%H-%M-%S"), 'project': "ADL-Music-Classication", 'config':config,
             'settings': wandb.Settings(_disable_stats=True), 'reinit': True, 'mode': 'online', 'entity':'adl-music-classification'}
     wandb.init(**kwargs)
     wandb.save('*.txt')
@@ -26,7 +26,9 @@ if __name__ == "__main__":
     else:
         device = "cpu"
 
-    setup_wandb(model = "filter_testing")
+
+
+
 
     print(f"Running with device: {device}")
     DEBUG = True
@@ -43,7 +45,7 @@ if __name__ == "__main__":
 
     height, width, channels = 80, 80, 1
     lr = 0.001
-    model = FilterMusicCNN(height=height, width=width, channels=1, class_count=10, filter_depth=1/3).to(device)
+    model = FilterMusicCNN(height=height, width=width, channels=1, class_count=10, filter_depth=1/4).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)#, betas=(0.9, 0.999), eps=1e-08)
     losses, losses_val = [], []
@@ -55,12 +57,16 @@ if __name__ == "__main__":
     else:
         batch_size = 16
 
-    wandb.config = {"height":height,
+
+
+    config = {"height":height,
                     "width":width,
                     "channels":channels,
                     "lr":lr,
                     "n_epochs":epoch_N,
-                    "batch_size":batch_size}
+                    "batch_size":batch_size,
+                    "model":"filter"}
+    setup_wandb(model = "filter_testing", config = config)
 
     losses, val_losses = [], []
     train_accuracies, val_accuracies = [0], [0]
@@ -91,8 +97,7 @@ if __name__ == "__main__":
         train_success_fail = np.array(class_preds) == np.array(class_trues)
         train_accuracies.append(train_success_fail[train_success_fail].shape[0] / train_success_fail.shape[0])
 
-        wandb.log({"train_loss":batch_loss.cpu().detach(),
-                   "train_acc":train_success_fail[train_success_fail].shape[0] / train_success_fail.shape[0]})
+
 
         #     VALIDATION DATA EVALUATION
         val_loss = 0
@@ -111,8 +116,11 @@ if __name__ == "__main__":
         val_losses.append(val_loss.cpu().detach())
         val_success_fail = np.array(class_preds) == np.array(val_trues)
         val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
-        wandb.log({"val_loss":val_loss.cpu().detach(),
-                   "val_acc":val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0]})
+
+        wandb.log({"train_loss":batch_loss.cpu().detach(),
+                   "train_acc":train_accuracies[-1],
+                   "val_loss":val_loss.cpu().detach(),
+                   "val_acc":val_accuracies[-1]})
 
     n_batchs = int(N/batch_size)
 
