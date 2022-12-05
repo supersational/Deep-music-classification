@@ -1,5 +1,9 @@
 import pickle
-import wget
+try:
+    import wget
+except ImportError:
+    print('wget not installed')
+    wget = None
 
 import torch.nn as nn
 import numpy as np
@@ -33,7 +37,9 @@ class GTZAN(data.Dataset):
             _, filename = os.path.split(dataset_path)
             print(filename)
             print(os.getcwd())
-            if filename == "val.pkl":
+            if wget is None:
+                raise NotImplementedError(f"{filename} can't be downloaded since wget python package is not installed")
+            elif filename == "val.pkl":
                 wget.download(val_link)
             elif filename == "train.pkl":
                 wget.download(train_link)
