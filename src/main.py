@@ -6,7 +6,13 @@ from dataset import GTZAN
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from datetime import datetime
-import wandb
+import os
+
+
+USE_WANDB = False
+print(f"{'' if USE_WANDB else 'not'} using wandb")
+if USE_WANDB:
+    import wandb
 from music_classification_models import DeepMusicCNN, ShallowMusicCNN, FilterMusicCNN
 from utils import get_batch_ids, plot_losses, plot_accuracies
 
@@ -25,7 +31,6 @@ if __name__ == "__main__":
         device = "cuda"
     else:
         device = "cpu"
-
 
 
 
@@ -66,7 +71,8 @@ if __name__ == "__main__":
                     "n_epochs":epoch_N,
                     "batch_size":batch_size,
                     "model":"filter"}
-    setup_wandb(model = "filter_testing", config = config)
+    if USE_WANDB:
+        setup_wandb(model = "filter_testing", config = config)
 
     losses, val_losses = [], []
     train_accuracies, val_accuracies = [0], [0]
@@ -117,10 +123,16 @@ if __name__ == "__main__":
         val_success_fail = np.array(class_preds) == np.array(val_trues)
         val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
 
-        wandb.log({"train_loss":batch_loss.cpu().detach(),
-                   "train_acc":train_accuracies[-1],
-                   "val_loss":val_loss.cpu().detach(),
-                   "val_acc":val_accuracies[-1]})
+        if USE_WANDB:
+            wandb.log({"train_loss":batch_loss.cpu().detach(),
+                    "train_acc":train_accuracies[-1],
+                    "val_loss":val_loss.cpu().detach(),
+                    "val_acc":val_accuracies[-1]})
+        elif DEBUG:
+            print({"train_loss":batch_loss.cpu().detach(),
+                    "train_acc":train_accuracies[-1],
+                    "val_loss":val_loss.cpu().detach(),
+                    "val_acc":val_accuracies[-1]})
 
     n_batchs = int(N/batch_size)
 
