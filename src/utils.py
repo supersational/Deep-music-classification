@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import random
 import matplotlib.pyplot as plt
@@ -27,24 +28,36 @@ def get_batch_ids(N, batch_size):
         batch_ids.append(batch_i)
     return batch_ids
 
-def plot_losses(train_loss, val_loss, tag = ''):
+def plot_losses(train_loss, val_loss, val_epochs, tag = '', title=''):
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 4))
     axes[0].plot((train_loss), label='train')
-    axes[1].plot((val_loss), label='test')
+    axes[1].plot(val_epochs, val_loss, label='test')
     axes[0].legend()
     axes[1].legend()
+    axes[0].set_ylabel('Loss')
+    axes[0].set_xlabel('Epoch')
+    axes[1].set_xlabel('Epoch')
+    axes[0].set_title('Train Loss')
+    axes[1].set_title('Test Loss')
+    if title: 
+        fig.suptitle(title)
 
+
+    os.makedirs('../results', exist_ok=True)
     plt.savefig(f'../results/losses{tag}.png')
     plt.close()
 
-def plot_accuracies(train_accuracies, val_accuracies, tag = ''):
+def plot_accuracies(train_accuracies, val_accuracies, val_epochs, tag = '', title=''):
+    print(val_accuracies, val_epochs)
     plt.plot(train_accuracies, label='Train')
-    plt.plot(val_accuracies, label='Test')
+    plt.plot(val_epochs, val_accuracies, label='Test')
     plt.ylabel('Accuracy')
     plt.xlabel('Epoch')
     plt.legend()
+    if title: plt.title(title)
     print('Train Acc: ', train_accuracies[-1])
     print('Test Acc: ', val_accuracies[-1])
 
+    os.makedirs('../results', exist_ok=True)
     plt.savefig(f'../results/accuracies{tag}.png')
     plt.close()
