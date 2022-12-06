@@ -14,7 +14,7 @@ parser.add_argument('--model', type=str, default='deep', help='model to use (dee
     choices=['deep', 'shallow', 'filter'])
 parser.add_argument('--batch_size', type=int, default=None, help='batch size')
 parser.add_argument('--tag', type=str, default='', help='tag for saving results')
-parser.add_argument('--epochs', type=int, default=300, help='number of epochs')
+parser.add_argument('--epochs', type=int, default=100, help='number of epochs')
 parser.add_argument('--l1', type=float, default=0.001, help='l1 regularization')
 parser.add_argument('--dropout', type=float, default=None, help='dropout rate, paper uses 0.1 for shallow and 0.25 for deep')
 parser.add_argument('--alpha', type=float, default=None, help='alpha for leaky relu, 0 for relu')
