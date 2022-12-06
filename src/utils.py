@@ -4,13 +4,13 @@ import random
 import matplotlib.pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay
 
-def plot_confusion_matrix(y_true, y_pred, tag = ''):
+def plot_confusion_matrix(y_true, y_pred, tag = '', model = 'nomodel'):
     fig, ax = plt.subplots(figsize = (6,6))
 
     ConfusionMatrixDisplay.from_predictions(y_true, y_pred, ax = ax)
 
     plt.tight_layout()
-    plt.savefig(f'../results/confusion{tag}.png')
+    plt.savefig(f'../results/{model}/confusion{tag}.png')
     plt.close()
 
 def get_batch_ids(N, batch_size):
@@ -29,7 +29,7 @@ def get_batch_ids(N, batch_size):
         batch_ids.append(batch_i)
     return batch_ids
 
-def plot_losses(train_loss, val_loss, val_epochs, tag = '', title=''):
+def plot_losses(train_loss, val_loss, val_epochs, tag = '', title='', model = 'nomodel'):
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 4))
     axes[0].plot((train_loss), label='train')
     axes[1].plot(val_epochs, val_loss, label='test')
@@ -45,10 +45,10 @@ def plot_losses(train_loss, val_loss, val_epochs, tag = '', title=''):
 
 
     os.makedirs('../results', exist_ok=True)
-    plt.savefig(f'../results/losses{tag}.png')
+    plt.savefig(f'../results/{model}/losses{tag}.png')
     plt.close()
 
-def plot_accuracies(train_accuracies, val_accuracies, val_epochs, tag = '', title=''):
+def plot_accuracies(train_accuracies, val_accuracies, val_epochs, tag = '', title='', model = 'nomodel'):
     plt.plot(train_accuracies, label='Train')
     plt.plot(val_epochs, val_accuracies, label='Test')
     plt.ylabel('Accuracy')
@@ -59,5 +59,5 @@ def plot_accuracies(train_accuracies, val_accuracies, val_epochs, tag = '', titl
     print('Test Acc: ', val_accuracies[-1])
 
     os.makedirs('../results', exist_ok=True)
-    plt.savefig(f'../results/accuracies{tag}.png')
+    plt.savefig(f'../results/{model}/accuracies{tag}.png')
     plt.close()

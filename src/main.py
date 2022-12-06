@@ -14,7 +14,7 @@ parser.add_argument('--model', type=str, default='deep', help='model to use (dee
     choices=['deep', 'shallow', 'filter'])
 parser.add_argument('--batch_size', type=int, default=None, help='batch size')
 parser.add_argument('--tag', type=str, default='', help='tag for saving results')
-parser.add_argument('--epochs', type=int, default=100, help='number of epochs')
+parser.add_argument('--epochs', type=int, default=300, help='number of epochs')
 parser.add_argument('--l1', type=float, default=0.001, help='l1 regularization')
 parser.add_argument('--dropout', type=float, default=None, help='dropout rate, paper uses 0.1 for shallow and 0.25 for deep')
 parser.add_argument('--alpha', type=float, default=None, help='alpha for leaky relu, 0 for relu')
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     elif args.model == "shallow":
         model = ShallowMusicCNN(**model_args).to(device)
     elif args.model == "filter":
-        model = FilterMusicCNN(**model_args, filter_depth=1/4, device = device).to(device)
+        model = FilterMusicCNN(**model_args, filter_depth=1/3, device = device).to(device)
     else:
         print("invalid model: ", args.model)
         sys.exit(1)
@@ -197,18 +197,30 @@ if __name__ == "__main__":
 
             plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
                             tag=f'_{tag}_{epoch}', 
-                            title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}')
-            plot_losses(losses, val_losses, val_epochs, tag=f'_{tag}_{epoch}', title=f'{args.model.title()} model')
+                            title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}',
+                            model = args.model)
 
-            plot_confusion_matrix(np.array(val_preds), np.array(val_trues), tag=f'_{tag}_{epoch}')
+            plot_losses(losses, val_losses, val_epochs,
+                        tag=f'_{tag}_{epoch}',
+                        title=f'{args.model.title()} model',
+                        model = args.model)
+
+            plot_confusion_matrix(np.array(val_preds), np.array(val_trues),
+                                  tag=f'_{tag}_{epoch}',
+                                  model = args.model)
             # wandb.log({"conf_mat" : wandb.plot.confusion_matrix(probs=None,
             #                         y_true=np.array(val_trues), preds=np.array(val_preds),
             #                         class_names=class_names)})
 
     plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
                     tag=f'_{tag}', 
-                    title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}')
-    plot_losses(losses, val_losses, val_epochs, tag=f'_{tag}', title=f'{args.model.title()} model')
+                    title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}',
+                    model = args.model)
+
+    plot_losses(losses, val_losses, val_epochs,
+                tag=f'_{tag}',
+                title=f'{args.model.title()} model',
+                model = args.model)
 
     print('final train loss: ', losses[-1])
     print('final test loss: ', val_losses[-1])
@@ -220,4 +232,6 @@ if __name__ == "__main__":
     np.save(f'./results/{args.model}/losses.npy', losses)
     np.save(f'./results/{args.model}/val_losses.npy', val_losses)
 
-    plot_confusion_matrix(np.array(val_preds), np.array(val_trues), tag=f'_{tag}')
+    plot_confusion_matrix(np.array(val_preds), np.array(val_trues),
+                          tag=f'_{tag}',
+                          model = args.model)
