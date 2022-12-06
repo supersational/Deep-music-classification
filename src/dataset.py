@@ -158,8 +158,9 @@ if __name__ == '__main__':
     dataset = GTZAN('../data/'+setname+'.pkl')
     # Get a random element of the dataset
     # datapoint_to_file(dataset[np.random.randint(0, len(dataset))])
-    
+
     label_ids = []
+    class_labels = {}
     print('starting loop', setname)
     for rep in range(5):
         labels = set()
@@ -169,9 +170,10 @@ if __name__ == '__main__':
             if label not in labels:
                 labels.add(label)
                 label_ids.append(idx)
+                class_labels[label] = filename.split('.')[0]
             if len(labels) == 10:
                 break
-
+    print(class_labels)
     print(labels)
     print(len(set(label_ids)))
     dataset_trimmed = [dataset[idx] for idx in label_ids]
