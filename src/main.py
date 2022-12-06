@@ -13,11 +13,11 @@ parser = argparse.ArgumentParser(description='Music Classification')
 parser.add_argument('--model', type=str, default='deep', help='model to use (deep, shallow, filter)',
     choices=['deep', 'shallow', 'filter'])
 parser.add_argument('--batch_size', type=int, default=None, help='batch size')
-parser.add_argument('--tag', type=str, default=None, help='tag for saving results')
+parser.add_argument('--tag', type=str, default='', help='tag for saving results')
 parser.add_argument('--epochs', type=int, default=100, help='number of epochs')
 args = parser.parse_args()
 
-tag = f'_{args.model}' if args.tag is None else args.tag
+tag = args.model+'_'+args.tag
 
 
 USE_WANDB = False
@@ -152,6 +152,11 @@ if __name__ == "__main__":
                 with torch.no_grad():
                     pred = model.forward(spectrograms.to(device))
                 val_loss += criterion(pred, labels.to(device))
+
+                if l1_lambda > 0:
+                    weights = torch.cat([p.view(-1) for n, p in model.named_parameters() if ".weight" in n])
+                    val_loss += l1_lambda * torch.norm(weights, 1)
+                
                 class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
                 val_trues.extend(label_classes)
 
