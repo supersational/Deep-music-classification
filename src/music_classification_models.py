@@ -284,55 +284,33 @@ class FilterMusicCNN(nn.Module):
 
         x_low  = torch.clone(images)
         x_low[:, :self.filter_dim, :] = 0.
+
         x_mid  = torch.clone(images)
         x_mid[:, self.filter_dim:-self.filter_dim, :] = 0.
+        
         x_high = torch.clone(images)
         x_high[:, :-self.filter_dim, :] = 0
 
         x_low, x_mid, x_high = F.relu(self.convlow1(x_low)), F.relu(self.convmid1(x_mid)), F.relu(self.convhigh1(x_high))
         x_low, x_mid, x_high = self.poollow1(x_low), self.poolmid1(x_mid), self.poolhigh1(x_high)
-        
+
         x_low, x_mid, x_high = F.relu(self.convlow2(x_low)), F.relu(self.convmid2(x_mid)), F.relu(self.convhigh2(x_high))
         x_low, x_mid, x_high = self.poollow2(x_low), self.poolmid2(x_mid), self.poolhigh2(x_high)
-        
+
         x_low, x_mid, x_high = F.relu(self.convlow3(x_low)), F.relu(self.convmid3(x_mid)), F.relu(self.convhigh3(x_high))
         x_low, x_mid, x_high = self.poollow3(x_low), self.poolmid3(x_mid), self.poolhigh3(x_high)
-        
+     
         x_low, x_mid, x_high = F.relu(self.convlow4(x_low)), F.relu(self.convmid4(x_mid)), F.relu(self.convhigh4(x_high))
         x_low, x_mid, x_high = self.poollow4(x_low), self.poolmid4(x_mid), self.poolhigh4(x_high)
 
 
-
-
-
-        # x_left, x_right = F.relu(self.conv11(images)), F.relu(self.conv12(images))
-        # x_left, x_right = self.pool11(x_left), self.pool12(x_right)
-        # 
-        # x_left, x_right = F.relu(self.conv21(x_left)), F.relu(self.conv22(x_right))
-        # x_left, x_right = self.pool21(x_left), self.pool22(x_right)
-        # 
-        # x_left, x_right = F.relu(self.conv31(x_left)), F.relu(self.conv32(x_right))
-        # x_left, x_right = self.pool31(x_left), self.pool32(x_right)
-        # 
-        # x_left, x_right = F.relu(self.conv41(x_left)), F.relu(self.conv42(x_right))
-        # x_left, x_right = self.pool41(x_left), self.pool42(x_right)
-        
-        
-        
-
         x_low = torch.flatten(x_low, start_dim=1)
-        x_low = torch.flatten(x_low)
-        
+
         x_mid = torch.flatten(x_mid, start_dim=1)
-        x_mid = torch.flatten(x_mid)
-        
+
         x_high = torch.flatten(x_high, start_dim=1)
-        x_high = torch.flatten(x_high)
 
-        # x_right = torch.flatten(x_right, start_dim=1)
-        # x_right = torch.flatten(x_right)
-
-        x_conc = torch.cat((x_low, x_mid, x_high))
+        x_conc = torch.cat((x_low, x_mid, x_high), dim=1)
         x_conc = F.relu(self.fc1(x_conc))
         x_conc = self.fc2(x_conc)
         return x_conc
