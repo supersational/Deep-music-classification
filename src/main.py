@@ -58,7 +58,14 @@ if __name__ == "__main__":
 
 
     height, width, channels = 80, 80, 1
-    lr = 0.001
+    
+    """L1 weight
+    regularization with a penalty of 0.0001 was applied to all
+    trainable parameters"""
+
+    lr = 0.0001
+    l1_lambda = 0.001
+
     if args.model == "deep":
         model = DeepMusicCNN(height=height, width=width, channels=1, class_count=10).to(device)
     elif args.model == "shallow":
@@ -110,7 +117,14 @@ if __name__ == "__main__":
             labels = nn.functional.one_hot(label_classes, num_classes=10).float()
 
             pred = model.forward(spectrograms.to(device))
+            
+
             batch_loss = criterion(pred, labels.to(device))
+            if l1_lambda > 0:
+                weights = torch.cat([p.view(-1) for n, p in model.named_parameters() if ".weight" in n])
+                print('weights:', weights.shape)
+                batch_loss += l1_lambda * torch.norm(weights, 1)
+                
             class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
             class_trues.extend(label_classes)
 
