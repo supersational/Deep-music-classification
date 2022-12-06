@@ -2,7 +2,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-
 def initialise_layer(layer):
     if hasattr(layer, "bias"):
         nn.init.zeros_(layer.bias)
@@ -14,7 +13,6 @@ def initialise_layer(layer):
 class ShallowMusicCNN(nn.Module):
     def __init__(self, class_count: int):
         super().__init__()
-        self.input_shape = (80, 80)
         self.class_count = class_count
 
         self.conv1: nn.Conv2d = nn.Conv2d(
@@ -78,16 +76,15 @@ class ShallowMusicCNN(nn.Module):
 
 
 class DeepMusicCNN(nn.Module):
-    def __init__(self, height: int, width: int, channels: int, class_count: int):
+    def __init__(self, class_count: int):
         super().__init__()
-        self.input_shape = (height, width, channels)
         self.class_count = class_count
 
         self.conv11 = nn.Conv2d(
-            in_channels=self.input_shape[2], out_channels=16, kernel_size=(10, 23),
+            in_channels=1, out_channels=16, kernel_size=(10, 23),
             padding='same')
         self.conv12 = nn.Conv2d(
-            in_channels=self.input_shape[2], out_channels=16, kernel_size=(21, 20),
+            in_channels=1, out_channels=16, kernel_size=(21, 20),
             padding='same')
 
         initialise_layer(self.conv11)
@@ -154,6 +151,7 @@ class DeepMusicCNN(nn.Module):
 
         x_conc = torch.cat((x_left, x_right), dim=1)
         x_conc = F.relu(self.fc1(x_conc))
+
         x_conc = self.fc2(x_conc)
         x_conc = F.leaky_relu(x_conc, negative_slope=0.3)
         x_conc = F.dropout(x_conc, p=0.25)
@@ -163,20 +161,20 @@ class DeepMusicCNN(nn.Module):
 
 class FilterMusicCNN(nn.Module):
     "3-branch model with each branch applying a different range of frequency-filter"
-    def __init__(self, height: int, width: int, channels: int, class_count: int, filter_depth: float):
+    def __init__(self, class_count: int, filter_depth: float):
         super().__init__()
-        self.input_shape = (height, width, channels)
         self.class_count = class_count
+        height = 80
         self.filter_dim  = int(height * filter_depth)
 
         self.convhigh1 = nn.Conv2d(
-            in_channels=self.input_shape[2], out_channels=16, kernel_size=(10, 23),
+            in_channels=1, out_channels=16, kernel_size=(10, 23),
             padding='same')
         self.convmid1 = nn.Conv2d(
-            in_channels=self.input_shape[2], out_channels=16, kernel_size=(21, 20),
+            in_channels=1, out_channels=16, kernel_size=(21, 20),
             padding='same')
         self.convlow1 = nn.Conv2d(
-            in_channels=self.input_shape[2], out_channels=16, kernel_size=(21, 20),
+            in_channels=1, out_channels=16, kernel_size=(21, 20),
             padding='same')
 
         initialise_layer(self.convhigh1)

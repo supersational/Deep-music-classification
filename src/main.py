@@ -67,11 +67,11 @@ if __name__ == "__main__":
     l1_lambda = 0.001
 
     if args.model == "deep":
-        model = DeepMusicCNN(height=height, width=width, channels=1, class_count=10).to(device)
+        model = DeepMusicCNN(class_count=10).to(device)
     elif args.model == "shallow":
         model = ShallowMusicCNN(class_count=10).to(device)
     elif args.model == "filter":
-        model = FilterMusicCNN(height=height, width=width, channels=1, class_count=10, filter_depth=1/4).to(device)
+        model = FilterMusicCNN(class_count=10, filter_depth=1/4).to(device)
     else:
         print("invalid model: ", args.model)
         sys.exit(1)
@@ -122,7 +122,6 @@ if __name__ == "__main__":
             batch_loss = criterion(pred, labels.to(device))
             if l1_lambda > 0:
                 weights = torch.cat([p.view(-1) for n, p in model.named_parameters() if ".weight" in n])
-                print('weights:', weights.shape)
                 batch_loss += l1_lambda * torch.norm(weights, 1)
                 
             class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
@@ -137,8 +136,8 @@ if __name__ == "__main__":
         train_success_fail = np.array(class_preds) == np.array(class_trues)
         train_accuracies.append(train_success_fail[train_success_fail].shape[0] / train_success_fail.shape[0])
 
-
-        if epoch > 0 and (epoch == pbar[-1] or (epoch % 10 == 0)):
+        # every 10 epochs, evaluate on validation data (and on final epoch)
+        if epoch > 0 and ((epoch == epoch_N-1) or (epoch % 10 == 0)):
         
             #     VALIDATION DATA EVALUATION
             val_loss = 0
