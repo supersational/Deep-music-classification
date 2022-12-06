@@ -11,9 +11,11 @@ def initialise_layer(layer):
 
 
 class ShallowMusicCNN(nn.Module):
-    def __init__(self, class_count: int):
+    def __init__(self, class_count: int, dropout: float = 0.1, alpha: float = 0.3 ):
         super().__init__()
         self.class_count = class_count
+        self.dropout = dropout
+        self.alpha = alpha
 
         self.conv1: nn.Conv2d = nn.Conv2d(
             in_channels=1,
@@ -58,27 +60,32 @@ class ShallowMusicCNN(nn.Module):
         # should have dims 1×10240 after this
 
         x = self.fc1(x)
-        # add leaky relu before dropout
-        x = F.relu(x)
+        if self.alpha is not None:
+            x = F.leaky_relu(x, negative_slope=self.alpha)
+        else:
+            x = F.relu(x)
 
         x = self.fc2(x)
         """Following typical architecture design, and for consistency with the deep
-        architecture/contents of the text, we also add a LeakyReLU with alpha=0.3 after the
+        architecture/contents of the text, we also add a alpha with alpha=0.3 after the
         200 unit fully connected layer, before dropout, which is not shown in Figure 1. """
-        x = F.leaky_relu(x, negative_slope=0.3)
+
         """Note that the position of Dropout in Figure 1 may cause confusion, the dropout is
         applied AFTER the 200 unit FULLY CONNECTED LAYER as they say in the text, not
         before/after the merge as they show in the figure."""
-        x = F.dropout(x, p=0.1)
+        if self.dropout is not None:
+            x = F.dropout(x, p=self.dropout)
 
         return x
 
 
 
 class DeepMusicCNN(nn.Module):
-    def __init__(self, class_count: int):
+    def __init__(self, class_count: int, dropout: float = 0.25, alpha: float = 0.3 ):
         super().__init__()
         self.class_count = class_count
+        self.dropout = dropout
+        self.alpha = alpha
 
         self.conv11 = nn.Conv2d(
             in_channels=1, out_channels=16, kernel_size=(10, 23),
@@ -150,20 +157,28 @@ class DeepMusicCNN(nn.Module):
         x_right = torch.flatten(x_right, start_dim=1)
 
         x_conc = torch.cat((x_left, x_right), dim=1)
-        x_conc = F.relu(self.fc1(x_conc))
+
+        x_conc = self.fc1(x_conc)
+        if self.alpha is not None:
+            x_conc = F.leaky_relu(x_conc, negative_slope=self.alpha)
+        else:
+            x_conc = F.relu(x_conc)
 
         x_conc = self.fc2(x_conc)
-        x_conc = F.leaky_relu(x_conc, negative_slope=0.3)
-        x_conc = F.dropout(x_conc, p=0.25)
+
+        if self.dropout is not None:
+            x_conc = F.dropout(x_conc, p=self.dropout)
 
         return x_conc
 
 
 class FilterMusicCNN(nn.Module):
     "3-branch model with each branch applying a different range of frequency-filter"
-    def __init__(self, class_count: int, filter_depth: float):
+    def __init__(self, class_count: int, filter_depth: float, dropout: float = 0.25, alpha: float = 0.3):
         super().__init__()
         self.class_count = class_count
+        self.dropout = dropout
+        self.alpha = alpha
         height = 80
         self.filter_dim  = int(height * filter_depth)
 
@@ -280,9 +295,14 @@ class FilterMusicCNN(nn.Module):
         x_high = torch.flatten(x_high, start_dim=1)
 
         x_conc = torch.cat((x_low, x_mid, x_high), dim=1)
-        x_conc = F.relu(self.fc1(x_conc))
+        x_conc = self.fc1(x_conc)
+        if self.alpha is not None:
+            x_conc = F.leaky_relu(x_conc, negative_slope=self.alpha)
+        else:
+            x_conc = F.relu(x_conc)
 
         x_conc = self.fc2(x_conc)
-        x_conc = F.leaky_relu(x_conc, negative_slope=0.3)
-        x_conc = F.dropout(x_conc, p=0.25)
+        
+        if self.dropout is not None:
+            x_conc = F.dropout(x_conc, p=self.dropout)
         return x_conc
