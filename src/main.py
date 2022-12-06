@@ -178,16 +178,16 @@ if __name__ == "__main__":
                         "val_acc":val_accuracies[-1]})
             print(len(val_epochs), len(val_accuracies), len(val_losses))
             plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
-                            tag=f'{tag}_{epoch}', 
+                            tag=f'_{tag}_{epoch}', 
                             title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}')
-            plot_losses(losses, val_losses, val_epochs, tag=f'{tag}_{epoch}', title=f'{args.model.title()} model')
+            plot_losses(losses, val_losses, val_epochs, tag=f'_{tag}_{epoch}', title=f'{args.model.title()} model')
 
     print(len(val_epochs), len(val_accuracies), len(val_losses))
 
     plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
-                    tag=f'{tag}', 
+                    tag=f'_{tag}', 
                     title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}')
-    plot_losses(losses, val_losses, val_epochs, tag=f'{tag}', title=f'{args.model.title()} model')
+    plot_losses(losses, val_losses, val_epochs, tag=f'_{tag}', title=f'{args.model.title()} model')
 
     print('final train loss: ', losses[-1])
     print('final test loss: ', val_losses[-1])
