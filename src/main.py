@@ -120,43 +120,45 @@ if __name__ == "__main__":
         train_accuracies.append(train_success_fail[train_success_fail].shape[0] / train_success_fail.shape[0])
 
 
+        if epoch > 0 and epoch % 10 == 0:
+        
+            #     VALIDATION DATA EVALUATION
+            val_loss = 0
+            val_epochs.append(epoch)
 
-        #     VALIDATION DATA EVALUATION
-        val_loss = 0
-        class_preds, val_trues = [], []
-        print(f'would be run for {len(get_batch_ids(N_val, batch_size))}x{batch_size} batches but limiting to 10')
-        for batch_ids in get_batch_ids(N_val, batch_size)[:10]:
-            spectrograms = torch.stack([spectrogram for filename, spectrogram, label, samples in [dataset_val[i] for i in batch_ids]])
-            label_classes = torch.LongTensor([label for filename, spectrogram, label, samples in [dataset_val[i] for i in batch_ids]])
-            labels = nn.functional.one_hot(label_classes, num_classes=10).float()
+            class_preds, val_trues = [], []
+            for batch_ids in get_batch_ids(N_val, batch_size):
+                spectrograms = torch.stack([spectrogram for filename, spectrogram, label, samples in [dataset_val[i] for i in batch_ids]])
+                label_classes = torch.LongTensor([label for filename, spectrogram, label, samples in [dataset_val[i] for i in batch_ids]])
+                labels = nn.functional.one_hot(label_classes, num_classes=10).float()
 
-            
-            with torch.no_grad():
-                pred = model.forward(spectrograms.to(device))
-            val_loss += criterion(pred, labels.to(device))
-            class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
-            val_trues.extend(label_classes)
-
-
-        val_losses.append(val_loss.cpu().detach())
-        val_success_fail = np.array(class_preds) == np.array(val_trues)
-        val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
+                
+                with torch.no_grad():
+                    pred = model.forward(spectrograms.to(device))
+                val_loss += criterion(pred, labels.to(device))
+                class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
+                val_trues.extend(label_classes)
 
 
-        if USE_WANDB:
-            wandb.log({"train_loss":batch_loss.cpu().detach(),
-                    "train_acc":train_accuracies[-1],
-                    "val_loss":val_loss.cpu().detach(),
-                    "val_acc":val_accuracies[-1]})
-        elif DEBUG:            print({"train_loss":batch_loss.cpu().detach(),
-                    "train_acc":train_accuracies[-1],
-                    "val_loss":val_loss.cpu().detach(),
-                    "val_acc":val_accuracies[-1]})
+            val_losses.append(val_loss.cpu().detach())
+            val_success_fail = np.array(class_preds) == np.array(val_trues)
+            val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
 
-    n_batchs = int(N/batch_size)
-
-    plot_accuracies(train_accuracies, val_accuracies)
-    plot_losses(losses, losses_val)
+            print(train_accuracies)
+            if USE_WANDB:
+                wandb.log({"train_loss":batch_loss.cpu().detach(),
+                        "train_acc":train_accuracies[-1],
+                        "val_loss":val_loss.cpu().detach(),
+                        "val_acc":val_accuracies[-1]})
+            elif DEBUG:            print({"train_loss":batch_loss.cpu().detach(),
+                        "train_acc":train_accuracies[-1],
+                        "val_loss":val_loss.cpu().detach(),
+                        "val_acc":val_accuracies[-1]})
+            print(len(val_epochs), len(val_accuracies), len(val_losses))
+            plot_accuracies(train_accuracies, val_accuracies, val_epochs, tag=f'_{args.model}_{epoch}', title=f'{args.model}')
+            plot_losses(losses, val_losses, val_epochs, tag=f'_{args.model}_{epoch}', title=f'{args.model}')
+    plot_accuracies(train_accuracies, val_accuracies, val_epochs, tag=f'_{args.model}', title=f'{args.model}')
+    plot_losses(losses, val_losses, val_epochs, tag=f'_{args.model}', title=f'{args.model}')
 
     print('final train loss: ', losses[-1])
     print('final test loss: ', val_losses[-1])
