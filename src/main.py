@@ -15,17 +15,18 @@ parser.add_argument('--model', type=str, default='deep', help='model to use (dee
 parser.add_argument('--batch_size', type=int, default=None, help='batch size')
 parser.add_argument('--tag', type=str, default='', help='tag for saving results')
 parser.add_argument('--epochs', type=int, default=100, help='number of epochs')
+parser.add_argument('--l1', type=float, default=0.001, help='l1 regularization')
+parser.add_argument('--wandb', action='store_true', help='use wandb')
 args = parser.parse_args()
 
-tag = args.model+'_'+args.tag
+tag = args.model+('_'+args.tag if args.tag else '')
 
 
-USE_WANDB = False
-print(f"{'' if USE_WANDB else 'not'} using wandb")
-if USE_WANDB:
+print(f"{'' if args.wandb else 'not'} using wandb")
+if args.wandb:
     import wandb
 from music_classification_models import DeepMusicCNN, ShallowMusicCNN, FilterMusicCNN
-from utils import get_batch_ids, plot_losses, plot_accuracies
+from utils import get_batch_ids, plot_losses, plot_accuracies, plot_confusion_matrix
 
 
 def setup_wandb(model = "deep", config = {}):
@@ -64,7 +65,7 @@ if __name__ == "__main__":
     trainable parameters"""
 
     lr = 0.0001
-    l1_lambda = 0.001
+    l1_lambda = args.l1
 
     if args.model == "deep":
         model = DeepMusicCNN(class_count=10).to(device)
@@ -91,15 +92,17 @@ if __name__ == "__main__":
 
 
 
-    config = {"height":height,
-                    "width":width,
-                    "channels":channels,
-                    "lr":lr,
-                    "n_epochs":epoch_N,
-                    "batch_size":batch_size,
-                    "model":"filter"}
-    if USE_WANDB:
-        setup_wandb(model = "filter_testing", config = config)
+    config = {  "model_name":args.model,
+                "height":height,
+                "width":width,
+                "channels":channels,
+                "lr":lr,
+                "l1_lambda":l1_lambda,
+                "n_epochs":epoch_N,
+                "batch_size":batch_size,
+                "model":"filter"}
+    if args.wandb:
+        setup_wandb(model = tag, config = config)
 
     losses, val_losses = [0], [0]
     train_accuracies, val_accuracies = [0], [0]
@@ -133,11 +136,17 @@ if __name__ == "__main__":
             # zero gradients
             optimizer.zero_grad()
             losses.append(batch_loss.cpu().detach())
+
         train_success_fail = np.array(class_preds) == np.array(class_trues)
         train_accuracies.append(train_success_fail[train_success_fail].shape[0] / train_success_fail.shape[0])
 
+        if args.wandb:
+            wandb.log({"train_loss":batch_loss.cpu().detach(),
+                    "train_acc":train_accuracies[-1]}, 
+                    step=epoch, commit=False)
+
         # every 10 epochs, evaluate on validation data (and on final epoch)
-        if epoch > 0 and ((epoch == epoch_N-1) or (epoch % 10 == 0)):
+        if epoch > 0 and ((epoch == epoch_N) or (epoch % 10 == 0)):
         
             #     VALIDATION DATA EVALUATION
             val_loss = 0
@@ -165,12 +174,11 @@ if __name__ == "__main__":
             val_success_fail = np.array(class_preds) == np.array(val_trues)
             val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
 
-            print(train_accuracies)
-            if USE_WANDB:
+            if args.wandb:
                 wandb.log({"train_loss":batch_loss.cpu().detach(),
                         "train_acc":train_accuracies[-1],
                         "val_loss":val_loss.cpu().detach(),
-                        "val_acc":val_accuracies[-1]})
+                        "val_acc":val_accuracies[-1]}, step=epoch)
             elif DEBUG: 
                         print({"train_loss":batch_loss.cpu().detach(),
                         "train_acc":train_accuracies[-1],
