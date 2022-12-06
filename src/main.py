@@ -71,11 +71,15 @@ if __name__ == "__main__":
     l1_lambda = args.l1
     model_args = {"class_count":10, "alpha": args.alpha, "dropout": args.dropout}
     # ensure dropout defaults to values given in paper
-    # if args.dropout is None:
-    #     if args.model == 'shallow':
-    #         model_args["dropout"] = 0.1
-    #     else:
-    #         model_args["dropout"] = 0.25
+    if args.dropout is None:
+        if args.model == 'shallow':
+            model_args["dropout"] = 0.1
+        else:
+            model_args["dropout"] = 0.25
+
+    if args.alpha is None:
+        model_args["alpha"] = 0.3
+    
 
     if args.model == "deep":
         model = DeepMusicCNN(**model_args).to(device)
