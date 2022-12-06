@@ -1,6 +1,7 @@
 data/val.pkl
 data/train.pkl
 
+*.npy
 *.png
 *.wav
 .DS_Store
