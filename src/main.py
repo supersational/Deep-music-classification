@@ -67,7 +67,7 @@ if __name__ == "__main__":
     regularization with a penalty of 0.0001 was applied to all
     trainable parameters"""
 
-    lr = 0.0001
+    lr = 0.00005
     l1_lambda = args.l1
     model_args = {"class_count":10, "alpha": args.alpha, "dropout": args.dropout}
     # ensure dropout defaults to values given in paper
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     os.makedirs(f'../results/{args.model}', exist_ok=True)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)#, betas=(0.9, 0.999), eps=1e-08)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08)
     
     n_classes = 10
     epoch_N = args.epochs
