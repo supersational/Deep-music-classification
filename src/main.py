@@ -4,9 +4,7 @@ import numpy as np
 from torch import nn
 from dataset import GTZAN
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 from datetime import datetime
-import os
 import argparse
 
 
@@ -42,8 +40,6 @@ if __name__ == "__main__":
         device = "cpu"
 
 
-
-
     print(f"Running with device: {device}")
     DEBUG = True
 
@@ -71,9 +67,9 @@ if __name__ == "__main__":
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)#, betas=(0.9, 0.999), eps=1e-08)
-    losses, losses_val = [], []
+
     n_classes = 10
-    epoch_N = 300
+    epoch_N = 100
 
     if args.batch_size is not None:
         batch_size = args.batch_size
@@ -94,16 +90,16 @@ if __name__ == "__main__":
     if USE_WANDB:
         setup_wandb(model = "filter_testing", config = config)
 
-    losses, val_losses = [], []
+    losses, val_losses = [0], [0]
     train_accuracies, val_accuracies = [0], [0]
+    val_epochs = [0]
     pbar = tqdm(range(epoch_N))
 
     for epoch in pbar:
-        pbar.set_description(f"Train accuracy: {train_accuracies[-1]}")
+        pbar.set_description(f"Train accuracy: {train_accuracies[-1] if len(train_accuracies) else '0'}")
         class_preds, class_trues = [], []
-        print(f'would be run for {len(get_batch_ids(N, batch_size))}x{batch_size} batches but limiting to 10')
 
-        for batch_ids in get_batch_ids(N, batch_size)[:40]:
+        for batch_ids in get_batch_ids(N, batch_size):
 
             spectrograms = torch.stack([spectrogram for filename, spectrogram, label, samples in [dataset[i] for i in batch_ids]])
             label_classes = torch.LongTensor([label for filename, spectrogram, label, samples in [dataset[i] for i in batch_ids]])
@@ -113,10 +109,6 @@ if __name__ == "__main__":
             batch_loss = criterion(pred, labels.to(device))
             class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
             class_trues.extend(label_classes)
-            # print(pred)
-            # print(labels)
-            # print(class_preds)
-            # print(len(class_preds))
 
             batch_loss.backward()
             # update weights
