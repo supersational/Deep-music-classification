@@ -13,8 +13,11 @@ parser = argparse.ArgumentParser(description='Music Classification')
 parser.add_argument('--model', type=str, default='deep', help='model to use (deep, shallow, filter)',
     choices=['deep', 'shallow', 'filter'])
 parser.add_argument('--batch_size', type=int, default=None, help='batch size')
-
+parser.add_argument('--tag', type=str, default=None, help='tag for saving results')
+parser.add_argument('--epochs', type=int, default=100, help='number of epochs')
 args = parser.parse_args()
+
+tag = f'_{args.model}' if args.tag is None else args.tag
 
 
 USE_WANDB = False
@@ -70,7 +73,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)#, betas=(0.9, 0.999), eps=1e-08)
     
     n_classes = 10
-    epoch_N = 100
+    epoch_N = args.epochs
 
     if args.batch_size is not None:
         batch_size = args.batch_size
@@ -121,11 +124,10 @@ if __name__ == "__main__":
         train_accuracies.append(train_success_fail[train_success_fail].shape[0] / train_success_fail.shape[0])
 
 
-        if epoch > 0 and epoch % 10 == 0:
+        if epoch > 0 and (epoch == pbar[-1] or (epoch % 10 == 0)):
         
             #     VALIDATION DATA EVALUATION
             val_loss = 0
-            val_epochs.append(epoch)
 
             class_preds, val_trues = [], []
             for batch_ids in get_batch_ids(N_val, batch_size):
@@ -140,7 +142,7 @@ if __name__ == "__main__":
                 class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
                 val_trues.extend(label_classes)
 
-
+            val_epochs.append(epoch)
             val_losses.append(val_loss.cpu().detach())
             val_success_fail = np.array(class_preds) == np.array(val_trues)
             val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
@@ -158,13 +160,16 @@ if __name__ == "__main__":
                         "val_acc":val_accuracies[-1]})
             print(len(val_epochs), len(val_accuracies), len(val_losses))
             plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
-                            tag=f'_{args.model}_{epoch}', 
+                            tag=f'{tag}_{epoch}', 
                             title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}')
-            plot_losses(losses, val_losses, val_epochs, tag=f'_{args.model}_{epoch}', title=f'{args.model.title()} model')
+            plot_losses(losses, val_losses, val_epochs, tag=f'{tag}_{epoch}', title=f'{args.model.title()} model')
+
+    print(len(val_epochs), len(val_accuracies), len(val_losses))
+
     plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
-                    tag=f'_{args.model}', 
+                    tag=f'{tag}', 
                     title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}')
-    plot_losses(losses, val_losses, val_epochs, tag=f'_{args.model}', title=f'{args.model.title()} model')
+    plot_losses(losses, val_losses, val_epochs, tag=f'{tag}', title=f'{args.model.title()} model')
 
     print('final train loss: ', losses[-1])
     print('final test loss: ', val_losses[-1])
