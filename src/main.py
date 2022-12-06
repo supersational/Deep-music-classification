@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)#, betas=(0.9, 0.999), eps=1e-08)
-
+    
     n_classes = 10
     epoch_N = 100
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     pbar = tqdm(range(epoch_N))
 
     for epoch in pbar:
-        pbar.set_description(f"Train accuracy: {train_accuracies[-1] if len(train_accuracies) else '0'}")
+        pbar.set_description(f"Train accuracy: {train_accuracies[-1]:.2f}")
         class_preds, class_trues = [], []
 
         for batch_ids in get_batch_ids(N, batch_size):
@@ -150,15 +150,20 @@ if __name__ == "__main__":
                         "train_acc":train_accuracies[-1],
                         "val_loss":val_loss.cpu().detach(),
                         "val_acc":val_accuracies[-1]})
-            elif DEBUG:            print({"train_loss":batch_loss.cpu().detach(),
+            elif DEBUG: 
+                        print({"train_loss":batch_loss.cpu().detach(),
                         "train_acc":train_accuracies[-1],
                         "val_loss":val_loss.cpu().detach(),
                         "val_acc":val_accuracies[-1]})
             print(len(val_epochs), len(val_accuracies), len(val_losses))
-            plot_accuracies(train_accuracies, val_accuracies, val_epochs, tag=f'_{args.model}_{epoch}', title=f'{args.model}')
-            plot_losses(losses, val_losses, val_epochs, tag=f'_{args.model}_{epoch}', title=f'{args.model}')
-    plot_accuracies(train_accuracies, val_accuracies, val_epochs, tag=f'_{args.model}', title=f'{args.model}')
-    plot_losses(losses, val_losses, val_epochs, tag=f'_{args.model}', title=f'{args.model}')
+            plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
+                            tag=f'_{args.model}_{epoch}', 
+                            title=f'{args.model.title()} model.\n Accuracy: {val_accuracies[-1]:.2f}')
+            plot_losses(losses, val_losses, val_epochs, tag=f'_{args.model}_{epoch}', title=f'{args.model.title()} model')
+    plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
+                    tag=f'_{args.model}', 
+                    title=f'{args.model.title()} model.\n Accuracy: {val_accuracies[-1]:.2f}')
+    plot_losses(losses, val_losses, val_epochs, tag=f'_{args.model}', title=f'{args.model.title()} model')
 
     print('final train loss: ', losses[-1])
     print('final test loss: ', val_losses[-1])
