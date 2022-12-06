@@ -87,6 +87,8 @@ if __name__ == "__main__":
         print("invalid model: ", args.model)
         sys.exit(1)
 
+    os.makedirs(f'../results/{args.model}', exist_ok=True)
+
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)#, betas=(0.9, 0.999), eps=1e-08)
     
@@ -225,12 +227,12 @@ if __name__ == "__main__":
     print('final train loss: ', losses[-1])
     print('final test loss: ', val_losses[-1])
 
-    os.makedirs(f'./results/{args.model}', exist_ok=True)
-    np.save(f'./results/{args.model}/train_accuracies.npy', train_accuracies)
-    np.save(f'./results/{args.model}/val_accuracies.npy', val_accuracies)
-    np.save(f'./results/{args.model}/val_epochs.npy', val_epochs)
-    np.save(f'./results/{args.model}/losses.npy', losses)
-    np.save(f'./results/{args.model}/val_losses.npy', val_losses)
+
+    np.save(f'../results/{args.model}/train_accuracies.npy', train_accuracies)
+    np.save(f'../results/{args.model}/val_accuracies.npy', val_accuracies)
+    np.save(f'../results/{args.model}/val_epochs.npy', val_epochs)
+    np.save(f'../results/{args.model}/losses.npy', losses)
+    np.save(f'../results/{args.model}/val_losses.npy', val_losses)
 
     plot_confusion_matrix(np.array(val_preds), np.array(val_trues),
                           tag=f'_{tag}',
