@@ -16,6 +16,8 @@ parser.add_argument('--batch_size', type=int, default=None, help='batch size')
 parser.add_argument('--tag', type=str, default='', help='tag for saving results')
 parser.add_argument('--epochs', type=int, default=100, help='number of epochs')
 parser.add_argument('--l1', type=float, default=0.001, help='l1 regularization')
+parser.add_argument('--dropout', type=float, default=None, help='dropout rate, paper uses 0.1 for shallow and 0.25 for deep')
+parser.add_argument('--alpha', type=float, default=None, help='alpha for leaky relu, 0 for relu')
 parser.add_argument('--wandb', action='store_true', help='use wandb')
 args = parser.parse_args()
 
@@ -66,13 +68,20 @@ if __name__ == "__main__":
 
     lr = 0.0001
     l1_lambda = args.l1
+    model_args = {"class_count":10, "alpha": args.alpha, "dropout": args.dropout}
+    # ensure dropout defaults to values given in paper
+    # if args.dropout is None:
+    #     if args.model == 'shallow':
+    #         model_args["dropout"] = 0.1
+    #     else:
+    #         model_args["dropout"] = 0.25
 
     if args.model == "deep":
-        model = DeepMusicCNN(class_count=10).to(device)
+        model = DeepMusicCNN(**model_args).to(device)
     elif args.model == "shallow":
-        model = ShallowMusicCNN(class_count=10).to(device)
+        model = ShallowMusicCNN(**model_args).to(device)
     elif args.model == "filter":
-        model = FilterMusicCNN(class_count=10, filter_depth=1/4).to(device)
+        model = FilterMusicCNN(**model_args, filter_depth=1/4).to(device)
     else:
         print("invalid model: ", args.model)
         sys.exit(1)
@@ -146,12 +155,12 @@ if __name__ == "__main__":
                     step=epoch, commit=False)
 
         # every 10 epochs, evaluate on validation data (and on final epoch)
-        if epoch > 0 and ((epoch == epoch_N) or (epoch % 10 == 0)):
+        if epoch >= 0 and ((epoch == epoch_N) or (epoch % 10 == 0)):
         
             #     VALIDATION DATA EVALUATION
             val_loss = 0
 
-            class_preds, val_trues = [], []
+            val_preds, val_trues = [], []
             for batch_ids in get_batch_ids(N_val, batch_size):
                 spectrograms = torch.stack([spectrogram for filename, spectrogram, label, samples in [dataset_val[i] for i in batch_ids]])
                 label_classes = torch.LongTensor([label for filename, spectrogram, label, samples in [dataset_val[i] for i in batch_ids]])
@@ -166,12 +175,12 @@ if __name__ == "__main__":
                     weights = torch.cat([p.view(-1) for n, p in model.named_parameters() if ".weight" in n])
                     val_loss += l1_lambda * torch.norm(weights, 1)
                 
-                class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
+                val_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
                 val_trues.extend(label_classes)
 
             val_epochs.append(epoch)
             val_losses.append(val_loss.cpu().detach())
-            val_success_fail = np.array(class_preds) == np.array(val_trues)
+            val_success_fail = np.array(val_preds) == np.array(val_trues)
             val_accuracies.append(val_success_fail[val_success_fail].shape[0] / val_success_fail.shape[0])
 
             if args.wandb:
@@ -184,14 +193,13 @@ if __name__ == "__main__":
                         "train_acc":train_accuracies[-1],
                         "val_loss":val_loss.cpu().detach(),
                         "val_acc":val_accuracies[-1]})
-            print(len(val_epochs), len(val_accuracies), len(val_losses))
+
             plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
                             tag=f'_{tag}_{epoch}', 
                             title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}')
             plot_losses(losses, val_losses, val_epochs, tag=f'_{tag}_{epoch}', title=f'{args.model.title()} model')
-            if epoch == epoch_N:
-                plot_confusion_matrix(class_preds, val_trues, tag=f'_{tag}')
-    print(len(val_epochs), len(val_accuracies), len(val_losses))
+
+            plot_confusion_matrix(np.array(val_preds), np.array(val_trues), tag=f'_{tag}_{epoch}')
 
     plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
                     tag=f'_{tag}', 
@@ -208,3 +216,4 @@ if __name__ == "__main__":
     np.save(f'./results/{args.model}/losses.npy', losses)
     np.save(f'./results/{args.model}/val_losses.npy', val_losses)
 
+    plot_confusion_matrix(np.array(val_preds), np.array(val_trues), tag=f'_{tag}')
