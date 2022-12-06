@@ -192,27 +192,27 @@ if __name__ == "__main__":
                         "val_loss":val_loss.cpu().detach(),
                         "val_acc":val_accuracies[-1]}, step=epoch)
             elif DEBUG: 
-                        print({"train_loss":batch_loss.cpu().detach(),
-                        "train_acc":train_accuracies[-1],
-                        "val_loss":val_loss.cpu().detach(),
-                        "val_acc":val_accuracies[-1]})
+                    print({"train_loss":batch_loss.cpu().detach(),
+                    "train_acc":train_accuracies[-1],
+                    "val_loss":val_loss.cpu().detach(),
+                    "val_acc":val_accuracies[-1]})
 
-            plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
-                            tag=f'_{tag}_{epoch}', 
-                            title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}',
-                            model = args.model)
+                    plot_accuracies(train_accuracies, val_accuracies, val_epochs,
+                                    tag=f'_{tag}_{epoch}',
+                                    title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}',
+                                    model = args.model)
 
-            plot_losses(losses, val_losses, val_epochs,
-                        tag=f'_{tag}_{epoch}',
-                        title=f'{args.model.title()} model',
-                        model = args.model)
+                    plot_losses(losses, val_losses, val_epochs,
+                                tag=f'_{tag}_{epoch}',
+                                title=f'{args.model.title()} model',
+                                model = args.model)
 
-            plot_confusion_matrix(np.array(val_preds), np.array(val_trues),
-                                  tag=f'_{tag}_{epoch}',
-                                  model = args.model)
-            # wandb.log({"conf_mat" : wandb.plot.confusion_matrix(probs=None,
-            #                         y_true=np.array(val_trues), preds=np.array(val_preds),
-            #                         class_names=class_names)})
+                    plot_confusion_matrix(np.array(val_preds), np.array(val_trues),
+                                          tag=f'_{tag}_{epoch}',
+                                          model = args.model)
+                    wandb.log({"conf_mat" : wandb.plot.confusion_matrix(probs=None,
+                                            y_true=np.array(val_trues), preds=np.array(val_preds),
+                                            class_names=class_names)})
 
     plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
                     tag=f'_{tag}', 
