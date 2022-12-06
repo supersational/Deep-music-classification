@@ -11,6 +11,7 @@ def plot_confusion_matrix(y_true, y_pred, tag = ''):
 
     plt.tight_layout()
     plt.savefig(f'../results/confusion{tag}.png')
+    plt.close()
 
 def get_batch_ids(N, batch_size):
     sample_ids = np.arange(N)
