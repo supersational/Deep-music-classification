@@ -48,7 +48,6 @@ def plot_losses(train_loss, val_loss, val_epochs, tag = '', title=''):
     plt.close()
 
 def plot_accuracies(train_accuracies, val_accuracies, val_epochs, tag = '', title=''):
-    print(val_accuracies, val_epochs)
     plt.plot(train_accuracies, label='Train')
     plt.plot(val_epochs, val_accuracies, label='Test')
     plt.ylabel('Accuracy')
