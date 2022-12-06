@@ -81,7 +81,7 @@ if __name__ == "__main__":
     elif args.model == "shallow":
         model = ShallowMusicCNN(**model_args).to(device)
     elif args.model == "filter":
-        model = FilterMusicCNN(**model_args, filter_depth=1/4).to(device)
+        model = FilterMusicCNN(**model_args, filter_depth=1/4, device = device).to(device)
     else:
         print("invalid model: ", args.model)
         sys.exit(1)

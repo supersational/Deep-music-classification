@@ -174,13 +174,19 @@ class DeepMusicCNN(nn.Module):
 
 class FilterMusicCNN(nn.Module):
     "3-branch model with each branch applying a different range of frequency-filter"
-    def __init__(self, class_count: int, filter_depth: float, dropout: float = 0.25, alpha: float = 0.3):
+    def __init__(self, class_count: int, filter_depth: float, dropout: float = 0.25, alpha: float = 0.3, device="cuda"):
         super().__init__()
         self.class_count = class_count
         self.dropout = dropout
         self.alpha = alpha
         height = 80
+        self.device = device
+        self.height = height
         self.filter_dim  = int(height * filter_depth)
+
+        self.prepare_masks()
+
+
 
         self.convhigh1 = nn.Conv2d(
             in_channels=1, out_channels=16, kernel_size=(10, 23),
@@ -264,16 +270,36 @@ class FilterMusicCNN(nn.Module):
         self.fc2 = nn.Linear(200, 10)
         initialise_layer(self.fc2)
 
+    def prepare_masks(self):
+        base_vector = torch.ones(self.height, dtype=torch.float)
+        high_vector, mid_vector, low_vector = base_vector.clone(), base_vector.clone(), base_vector.clone()
+
+        gradient_range = self.height - self.filter_dim
+
+        low_vector[self.filter_dim:]  = torch.linspace(1, 0, steps = gradient_range)
+        mid_vector[:self.filter_dim]  = torch.linspace(0, 1, steps = self.filter_dim)
+        mid_vector[-self.filter_dim:] = torch.linspace(1, 0, steps = self.filter_dim)
+        high_vector[:-self.filter_dim] = torch.linspace(0, 1, steps = gradient_range)
+
+        low_mask, mid_mask, high_mask = torch.diag(low_vector), torch.diag(mid_vector), torch.diag(high_vector)
+
+        self.low_mask, self.mid_mask, self.high_mask = low_mask.to(self.device), mid_mask.to(self.device), high_mask.to(self.device)
     def forward(self, images: torch.Tensor) -> torch.Tensor:
 
-        x_low  = torch.clone(images)
-        x_low[:, :self.filter_dim, :] = 0.
+        # x_low  = torch.clone(images)
+        # x_low[:, self.filter_dim:, :] = 0.
+        #
+        # x_mid  = torch.clone(images)
+        # # x_mid[:, self.filter_dim:-self.filter_dim, :] = 0.
+        # x_mid[:, :self.filter_dim,:] = 0.
+        # x_mid[:,-self.filter_dim:,:] = 0.
+        #
+        # x_high = torch.clone(images)
+        # x_high[:, :-self.filter_dim, :] = 0
 
-        x_mid  = torch.clone(images)
-        x_mid[:, self.filter_dim:-self.filter_dim, :] = 0.
-
-        x_high = torch.clone(images)
-        x_high[:, :-self.filter_dim, :] = 0
+        x_low  = self.low_mask @ torch.clone(images)
+        x_mid  = self.mid_mask @ torch.clone(images)
+        x_high = self.high_mask @ torch.clone(images)
 
         x_low, x_mid, x_high = F.relu(self.convlow1(x_low)), F.relu(self.convmid1(x_mid)), F.relu(self.convhigh1(x_high))
         x_low, x_mid, x_high = self.poollow1(x_low), self.poolmid1(x_mid), self.poolhigh1(x_high)
@@ -302,7 +328,7 @@ class FilterMusicCNN(nn.Module):
             x_conc = F.relu(x_conc)
 
         x_conc = self.fc2(x_conc)
-        
+
         if self.dropout is not None:
             x_conc = F.dropout(x_conc, p=self.dropout)
         return x_conc
