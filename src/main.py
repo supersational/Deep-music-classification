@@ -52,6 +52,7 @@ if __name__ == "__main__":
 
     dataset = GTZAN('../data/train.pkl')
     dataset_val = GTZAN('../data/val.pkl')
+    class_names = {8: 'reggae', 1: 'classical', 6: 'metal', 2: 'country', 5: 'jazz', 7: 'pop', 4: 'hiphop', 0: 'blues', 3: 'disco', 9: 'rock'}
 
     N, N_val = len(dataset), len(dataset_val)
     filename, spectrogram, label, samples = dataset[0]
@@ -200,6 +201,9 @@ if __name__ == "__main__":
             plot_losses(losses, val_losses, val_epochs, tag=f'_{tag}_{epoch}', title=f'{args.model.title()} model')
 
             plot_confusion_matrix(np.array(val_preds), np.array(val_trues), tag=f'_{tag}_{epoch}')
+            # wandb.log({"conf_mat" : wandb.plot.confusion_matrix(probs=None,
+            #                         y_true=np.array(val_trues), preds=np.array(val_preds),
+            #                         class_names=class_names)})
 
     plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
                     tag=f'_{tag}', 
