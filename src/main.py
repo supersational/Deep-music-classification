@@ -13,7 +13,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Music Classification')
 parser.add_argument('--model', type=str, default='deep', help='model to use (deep, shallow, filter)',
     choices=['deep', 'shallow', 'filter'])
-parser.add_argument('--batch_size', type=int, default=128, help='batch size')
+parser.add_argument('--batch_size', type=int, default=None, help='batch size')
 
 args = parser.parse_args()
 
@@ -75,7 +75,9 @@ if __name__ == "__main__":
     n_classes = 10
     epoch_N = 300
 
-    if device == "cuda":
+    if args.batch_size is not None:
+        batch_size = args.batch_size
+    elif device == "cuda":
         batch_size = 128
     else:
         batch_size = 16
