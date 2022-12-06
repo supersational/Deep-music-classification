@@ -7,6 +7,15 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from datetime import datetime
 import os
+import argparse
+
+
+parser = argparse.ArgumentParser(description='Music Classification')
+parser.add_argument('--model', type=str, default='deep', help='model to use (deep, shallow, filter)',
+    choices=['deep', 'shallow', 'filter'])
+parser.add_argument('--batch_size', type=int, default=128, help='batch size')
+
+args = parser.parse_args()
 
 
 USE_WANDB = False
@@ -50,7 +59,16 @@ if __name__ == "__main__":
 
     height, width, channels = 80, 80, 1
     lr = 0.001
-    model = FilterMusicCNN(height=height, width=width, channels=1, class_count=10, filter_depth=1/4).to(device)
+    if args.model == "deep":
+        model = DeepMusicCNN(height=height, width=width, channels=1, class_count=10).to(device)
+    elif args.model == "shallow":
+        model = ShallowMusicCNN(class_count=10).to(device)
+    elif args.model == "filter":
+        model = FilterMusicCNN(height=height, width=width, channels=1, class_count=10, filter_depth=1/4).to(device)
+    else:
+        print("invalid model: ", args.model)
+        sys.exit(1)
+
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)#, betas=(0.9, 0.999), eps=1e-08)
     losses, losses_val = [], []
