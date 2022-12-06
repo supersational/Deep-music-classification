@@ -189,7 +189,8 @@ if __name__ == "__main__":
                             tag=f'_{tag}_{epoch}', 
                             title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}')
             plot_losses(losses, val_losses, val_epochs, tag=f'_{tag}_{epoch}', title=f'{args.model.title()} model')
-
+            if epoch == epoch_N:
+                plot_confusion_matrix(class_preds, val_trues, tag=f'_{tag}')
     print(len(val_epochs), len(val_accuracies), len(val_losses))
 
     plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
