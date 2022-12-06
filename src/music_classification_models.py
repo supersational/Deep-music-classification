@@ -155,6 +155,9 @@ class DeepMusicCNN(nn.Module):
         x_conc = torch.cat((x_left, x_right), dim=1)
         x_conc = F.relu(self.fc1(x_conc))
         x_conc = self.fc2(x_conc)
+        x_conc = F.leaky_relu(x_conc, negative_slope=0.3)
+        x_conc = F.dropout(x_conc, p=0.25)
+
         return x_conc
 
 
@@ -280,5 +283,8 @@ class FilterMusicCNN(nn.Module):
 
         x_conc = torch.cat((x_low, x_mid, x_high), dim=1)
         x_conc = F.relu(self.fc1(x_conc))
+
         x_conc = self.fc2(x_conc)
+        x_conc = F.leaky_relu(x_conc, negative_slope=0.3)
+        x_conc = F.dropout(x_conc, p=0.25)
         return x_conc
