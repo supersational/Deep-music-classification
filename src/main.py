@@ -158,7 +158,7 @@ if __name__ == "__main__":
                     step=epoch, commit=False)
 
         # every 10 epochs, evaluate on validation data (and on final epoch)
-        if epoch >= 0 and ((epoch == epoch_N) or (epoch % 10 == 0)):
+        if epoch >= 0 and ((epoch == epoch_N - 1) or (epoch % 10 == 0)):
         
             #     VALIDATION DATA EVALUATION
             val_loss = 0
