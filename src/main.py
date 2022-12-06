@@ -1,3 +1,4 @@
+import os
 import sys
 import torch
 import numpy as np
@@ -158,14 +159,20 @@ if __name__ == "__main__":
             print(len(val_epochs), len(val_accuracies), len(val_losses))
             plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
                             tag=f'_{args.model}_{epoch}', 
-                            title=f'{args.model.title()} model.\n Accuracy: {val_accuracies[-1]:.2f}')
+                            title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}')
             plot_losses(losses, val_losses, val_epochs, tag=f'_{args.model}_{epoch}', title=f'{args.model.title()} model')
     plot_accuracies(train_accuracies, val_accuracies, val_epochs, 
                     tag=f'_{args.model}', 
-                    title=f'{args.model.title()} model.\n Accuracy: {val_accuracies[-1]:.2f}')
+                    title=f'{args.model.title()} model\n Accuracy: {val_accuracies[-1]:.2f}')
     plot_losses(losses, val_losses, val_epochs, tag=f'_{args.model}', title=f'{args.model.title()} model')
 
     print('final train loss: ', losses[-1])
     print('final test loss: ', val_losses[-1])
 
+    os.makedirs(f'./results/{args.model}', exist_ok=True)
+    np.save(f'./results/{args.model}/train_accuracies.npy', train_accuracies)
+    np.save(f'./results/{args.model}/val_accuracies.npy', val_accuracies)
+    np.save(f'./results/{args.model}/val_epochs.npy', val_epochs)
+    np.save(f'./results/{args.model}/losses.npy', losses)
+    np.save(f'./results/{args.model}/val_losses.npy', val_losses)
 
