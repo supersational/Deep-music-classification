@@ -267,7 +267,10 @@ if __name__ == "__main__":
     with open(f'../results/{args.model}/results_{tag}.txt','w') as f:
         f.write(f"""
                 final train loss: {losses[-1]}
-                final test loss: {val_losses[-1]}""")
+                final test loss: {val_losses[-1]}
+                final train accuracy: {train_accuracies[-1]}
+                final test accuracy: {val_accuracies[-1]}
+                """)
 
     print('final train loss: ', losses[-1])
     print('final test loss: ', val_losses[-1])
