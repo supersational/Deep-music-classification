@@ -3,15 +3,21 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix
+
 
 def plot_confusion_matrix(y_true, y_pred, tag = '', model = 'nomodel'):
     fig, ax = plt.subplots(figsize = (6,6))
 
-    ConfusionMatrixDisplay.from_predictions(y_true, y_pred, ax = ax)
+
+    # BC4 version of sklearn has this api
+    cm = confusion_matrix(y_true, y_pred)
+    ConfusionMatrixDisplay(confusion_matrix=cm).plot(ax=ax)
 
     plt.tight_layout()
     plt.savefig(f'../results/{model}/confusion{tag}.png')
     plt.close()
+
 
 def get_batch_ids(N, batch_size):
     sample_ids = np.arange(N)
