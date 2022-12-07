@@ -95,7 +95,7 @@ if __name__ == "__main__":
     ## after using the model param add the run_n to not overwrite other runs
     if args.run_n is not None:
         args.model += '_'+str(args.run_n)
-    os.makedirs(f'../results/{args.model}', exist_ok=True)
+    os.makedirs(f'../results/{args.model}/', exist_ok=True)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08)
@@ -225,6 +225,7 @@ if __name__ == "__main__":
                                                 y_true=np.array(val_trues), preds=np.array(val_preds),
                                                 class_names=class_names)})
 
+    os.makedirs(f'../results/{args.model}/', exist_ok=True)
     with open(f'../results/{args.model}/results_{tag}.txt') as f:
         f.write(f"""
 final train loss: {losses[-1]}
