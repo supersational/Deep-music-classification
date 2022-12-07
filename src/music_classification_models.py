@@ -60,7 +60,7 @@ class ShallowMusicCNN(nn.Module):
         # should have dims 1×10240 after this
 
         x = self.fc1(x)
-        if self.alpha is not None:
+        if self.alpha is not None and self.alpha > 0:
             x = F.leaky_relu(x, negative_slope=self.alpha)
         else:
             x = F.relu(x)
@@ -73,7 +73,7 @@ class ShallowMusicCNN(nn.Module):
         """Note that the position of Dropout in Figure 1 may cause confusion, the dropout is
         applied AFTER the 200 unit FULLY CONNECTED LAYER as they say in the text, not
         before/after the merge as they show in the figure."""
-        if self.dropout is not None:
+        if self.dropout is not None and self.dropout > 0:
             x = F.dropout(x, p=self.dropout)
 
         return x
@@ -159,14 +159,14 @@ class DeepMusicCNN(nn.Module):
         x_conc = torch.cat((x_left, x_right), dim=1)
 
         x_conc = self.fc1(x_conc)
-        if self.alpha is not None:
+        if self.alpha is not None and self.alpha > 0:
             x_conc = F.leaky_relu(x_conc, negative_slope=self.alpha)
         else:
             x_conc = F.relu(x_conc)
 
         x_conc = self.fc2(x_conc)
 
-        if self.dropout is not None:
+        if self.dropout is not None and self.dropout > 0:
             x_conc = F.dropout(x_conc, p=self.dropout)
 
         return x_conc
@@ -322,13 +322,13 @@ class FilterMusicCNN(nn.Module):
 
         x_conc = torch.cat((x_low, x_mid, x_high), dim=1)
         x_conc = self.fc1(x_conc)
-        if self.alpha is not None:
+        if self.alpha is not None and self.alpha > 0:
             x_conc = F.leaky_relu(x_conc, negative_slope=self.alpha)
         else:
             x_conc = F.relu(x_conc)
 
         x_conc = self.fc2(x_conc)
 
-        if self.dropout is not None:
+        if self.dropout is not None and self.dropout > 0:
             x_conc = F.dropout(x_conc, p=self.dropout)
         return x_conc
