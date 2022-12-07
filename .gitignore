@@ -1,6 +1,9 @@
 data/val.pkl
 data/train.pkl
 
+*.txt
+*.out
+*.err
 *.npy
 *.png
 *.wav
