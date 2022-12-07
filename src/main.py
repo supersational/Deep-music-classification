@@ -214,7 +214,7 @@ if __name__ == "__main__":
                     plot_confusion_matrix(np.array(val_preds), np.array(val_trues),
                                           tag=f'_{tag}_{epoch}',
                                           model = args.model)
-                    wandb.log({"conf_mat" : wandb.plot.confusion_matrix(probs=None,
+                    if args.wandb: wandb.log({"conf_mat" : wandb.plot.confusion_matrix(probs=None,
                                             y_true=np.array(val_trues), preds=np.array(val_preds),
                                             class_names=class_names)})
 
