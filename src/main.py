@@ -1,3 +1,9 @@
+"""
+Riku Green, Sven Hollowell, Alex Davies
+
+main.py executes the train of models from music_classification_models.py and uses functions from utils.py
+"""
+
 import os
 import sys
 import torch
@@ -9,6 +15,8 @@ from datetime import datetime
 import argparse
 
 
+
+# Get terminal arguments (if there are any)
 parser = argparse.ArgumentParser(description='Music Classification')
 parser.add_argument('--model', type=str, default='deep', help='model to use (deep, shallow, filter)',
     choices=['deep', 'shallow', 'filter'])
@@ -25,13 +33,17 @@ args = parser.parse_args()
 tag = args.model+('_'+args.tag if args.tag else '')+('_'+str(args.run_n) if args.run_n else '')
 
 
+# Wandb causes issues on some machines and HPC clusters
 print(f"{'' if args.wandb else 'not'} using wandb")
 if args.wandb:
     import wandb
+
+# Import models and utility functions
 from music_classification_models import DeepMusicCNN, ShallowMusicCNN, FilterMusicCNN
 from utils import get_batch_ids, plot_losses, plot_accuracies, plot_confusion_matrix
 
 
+# Initialise wandb if is it being used
 def setup_wandb(model = "deep", config = {}):
 
     kwargs = {'name': datetime.now().strftime(f"{model}/%m-%d/%H-%M-%S"), 'project': "ADL-Music-Classication", 'config':config,
@@ -42,6 +54,7 @@ def setup_wandb(model = "deep", config = {}):
 
 
 if __name__ == "__main__":
+    # Check for GPU acceleration availability
     if torch.cuda.is_available():
         device = "cuda"
     else:
@@ -49,19 +62,23 @@ if __name__ == "__main__":
 
 
     print(f"Running with device: {device}")
+    # Debug gives increased numbers for print statements for diagnostics
     DEBUG = True
 
+    # Load data from .pkl files
     dataset = GTZAN('../data/train.pkl')
     dataset_val = GTZAN('../data/val.pkl')
     class_names = {8: 'reggae', 1: 'classical', 6: 'metal', 2: 'country', 5: 'jazz', 7: 'pop', 4: 'hiphop', 0: 'blues', 3: 'disco', 9: 'rock'}
 
+
+    # Get sizes of datasets
     N, N_val = len(dataset), len(dataset_val)
-    filename, spectrogram, label, samples = dataset[0]
+    # filename, spectrogram, label, samples = dataset[0]
 
     print('Training Data Size: ', N)
     print('Testing Data Size: ', N_val)
 
-
+    # For the GTZAN dataset the spectrograms are 80x80 values in one channel
     height, width, channels = 80, 80, 1
     
     """L1 weight
@@ -71,6 +88,8 @@ if __name__ == "__main__":
     lr = 0.00005
     l1_lambda = args.l1
     model_args = {"class_count":10, "alpha": args.alpha, "dropout": args.dropout}
+
+
     # ensure dropout defaults to values given in paper
     if args.dropout is None:
         if args.model == 'shallow':
@@ -78,15 +97,17 @@ if __name__ == "__main__":
         else:
             model_args["dropout"] = 0.25
 
+    # Again default to values from paper
     if args.alpha is None:
         model_args["alpha"] = 0.3
     
-
+    # Get model from terminal arguments
     if args.model == "deep":
         model = DeepMusicCNN(**model_args).to(device)
     elif args.model == "shallow":
         model = ShallowMusicCNN(**model_args).to(device)
     elif args.model == "filter":
+        # Filter depth sets the proportion of the spectrogram without a gradient applied to it in each branch
         model = FilterMusicCNN(**model_args, filter_depth=1/3, device = device).to(device)
     else:
         print("invalid model: ", args.model)
@@ -97,12 +118,15 @@ if __name__ == "__main__":
         args.model += '_'+str(args.run_n)
     os.makedirs(f'../results/{args.model}/', exist_ok=True)
 
+    # Loss function and optimizer (values from paper)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08)
     
     n_classes = 10
     epoch_N = args.epochs
 
+
+    # Change batch size based on either terminal arguments or GPU availability
     if args.batch_size is not None:
         batch_size = args.batch_size
     elif device == "cuda":
@@ -112,6 +136,7 @@ if __name__ == "__main__":
 
 
 
+    # Initialise and send configs to wandb if it is being used
     config = {  "model_name":args.model,
                 "height":height,
                 "width":width,
@@ -124,29 +149,35 @@ if __name__ == "__main__":
     if args.wandb:
         setup_wandb(model = tag, config = config)
 
+    # Empty lists for tracking accuracies and losses
     losses, val_losses = [0], [0]
     train_accuracies, val_accuracies = [0], [0]
     val_epochs = [0]
     pbar = tqdm(range(1,epoch_N+1))
 
+    # Main training loop
     for epoch in pbar:
         pbar.set_description(f"Train accuracy: {train_accuracies[-1]:.2f}")
         class_preds, class_trues = [], []
 
         for batch_ids in get_batch_ids(N, batch_size):
 
+            # Tensor for input and loss calculation is a stack from batch ids
+
             spectrograms = torch.stack([spectrogram for filename, spectrogram, label, samples in [dataset[i] for i in batch_ids]])
             label_classes = torch.LongTensor([label for filename, spectrogram, label, samples in [dataset[i] for i in batch_ids]])
             labels = nn.functional.one_hot(label_classes, num_classes=10).float()
 
+            # Get predictions
             pred = model.forward(spectrograms.to(device))
-            
 
+            # Get loss for predictions
             batch_loss = criterion(pred, labels.to(device))
             if l1_lambda > 0:
                 weights = torch.cat([p.view(-1) for n, p in model.named_parameters() if ".weight" in n])
                 batch_loss += l1_lambda * torch.norm(weights, 1)
-                
+
+            # Get classes as non-one-hot and add to accumulators
             class_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
             class_trues.extend(label_classes)
 
@@ -157,6 +188,7 @@ if __name__ == "__main__":
             optimizer.zero_grad()
             losses.append(batch_loss.cpu().detach())
 
+        # Calculate training accuracies
         train_success_fail = np.array(class_preds) == np.array(class_trues)
         train_accuracies.append(train_success_fail[train_success_fail].shape[0] / train_success_fail.shape[0])
 
@@ -171,13 +203,16 @@ if __name__ == "__main__":
             #     VALIDATION DATA EVALUATION
             val_loss = 0
 
+            # Store true and predicted labels
             val_preds, val_trues = [], []
+
+            # Iterate over validation set
             for batch_ids in get_batch_ids(N_val, batch_size):
                 spectrograms = torch.stack([spectrogram for filename, spectrogram, label, samples in [dataset_val[i] for i in batch_ids]])
                 label_classes = torch.LongTensor([label for filename, spectrogram, label, samples in [dataset_val[i] for i in batch_ids]])
                 labels = nn.functional.one_hot(label_classes, num_classes=10).float()
 
-                
+                # Set no gradient change and get predictions
                 with torch.no_grad():
                     pred = model.forward(spectrograms.to(device))
                 val_loss += criterion(pred, labels.to(device))
@@ -185,10 +220,12 @@ if __name__ == "__main__":
                 if l1_lambda > 0:
                     weights = torch.cat([p.view(-1) for n, p in model.named_parameters() if ".weight" in n])
                     val_loss += l1_lambda * torch.norm(weights, 1)
-                
+
+                # Store true and predicted labels
                 val_preds.extend(torch.argmax(pred, axis=1).cpu().detach())
                 val_trues.extend(label_classes)
 
+            # Unlike training, validation is every N epochs, so need to store when these occur
             val_epochs.append(epoch)
             val_losses.append(val_loss.cpu().detach())
             val_success_fail = np.array(val_preds) == np.array(val_trues)
@@ -202,7 +239,7 @@ if __name__ == "__main__":
                             "train_acc":train_accuracies[-1],
                             "val_loss":val_loss.cpu().detach(),
                             "val_acc":val_accuracies[-1]}, step=epoch)
-                elif DEBUG: 
+                elif DEBUG:
                         print({"train_loss":batch_loss.cpu().detach(),
                         "train_acc":train_accuracies[-1],
                         "val_loss":val_loss.cpu().detach(),
@@ -225,11 +262,12 @@ if __name__ == "__main__":
                                                 y_true=np.array(val_trues), preds=np.array(val_preds),
                                                 class_names=class_names)})
 
+    # Make directory for results and model
     os.makedirs(f'../results/{args.model}/', exist_ok=True)
     with open(f'../results/{args.model}/results_{tag}.txt') as f:
         f.write(f"""
-final train loss: {losses[-1]}
-final test loss: {val_losses[-1]}""")
+                final train loss: {losses[-1]}
+                final test loss: {val_losses[-1]}""")
 
     print('final train loss: ', losses[-1])
     print('final test loss: ', val_losses[-1])
@@ -240,6 +278,3 @@ final test loss: {val_losses[-1]}""")
     np.save(f'../results/{args.model}/losses_{tag}.npy', losses)
     np.save(f'../results/{args.model}/val_losses_{tag}.npy', val_losses)
 
-    # plot_confusion_matrix(np.array(val_preds), np.array(val_trues),
-    #                       tag=f'_{tag}',
-    #                       model = args.model)
