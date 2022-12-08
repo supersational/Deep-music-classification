@@ -118,6 +118,7 @@ env.bak/
 venv.bak/
 .idea/
 src/wandb/
+#archive/
 # Spyder project settings
 .spyderproject
 .spyproject

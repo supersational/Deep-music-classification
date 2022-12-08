@@ -186,8 +186,6 @@ class FilterMusicCNN(nn.Module):
 
         self.prepare_masks()
 
-
-
         self.convhigh1 = nn.Conv2d(
             in_channels=1, out_channels=16, kernel_size=(10, 23),
             padding='same')
@@ -264,7 +262,6 @@ class FilterMusicCNN(nn.Module):
         
         
         #==========================
-        # self.fc1 = nn.Linear(5120, 200)
         self.fc1 = nn.Linear(7680, 200)
         initialise_layer(self.fc1)
         self.fc2 = nn.Linear(200, 10)
@@ -285,17 +282,6 @@ class FilterMusicCNN(nn.Module):
 
         self.low_mask, self.mid_mask, self.high_mask = low_mask.to(self.device), mid_mask.to(self.device), high_mask.to(self.device)
     def forward(self, images: torch.Tensor) -> torch.Tensor:
-
-        # x_low  = torch.clone(images)
-        # x_low[:, self.filter_dim:, :] = 0.
-        #
-        # x_mid  = torch.clone(images)
-        # # x_mid[:, self.filter_dim:-self.filter_dim, :] = 0.
-        # x_mid[:, :self.filter_dim,:] = 0.
-        # x_mid[:,-self.filter_dim:,:] = 0.
-        #
-        # x_high = torch.clone(images)
-        # x_high[:, :-self.filter_dim, :] = 0
 
         x_low  = self.low_mask @ torch.clone(images)
         x_mid  = self.mid_mask @ torch.clone(images)
