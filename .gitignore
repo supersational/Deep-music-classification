@@ -121,7 +121,7 @@ env.bak/
 venv.bak/
 .idea/
 src/wandb/
-#archive/
+archive/
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -139,3 +139,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/archive/
