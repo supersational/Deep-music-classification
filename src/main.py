@@ -264,7 +264,7 @@ if __name__ == "__main__":
 
     # Make directory for results and model
     os.makedirs(f'../results/{args.model}/', exist_ok=True)
-    with open(f'../results/{args.model}/results_{tag}.txt') as f:
+    with open(f'../results/{args.model}/results_{tag}.txt','w') as f:
         f.write(f"""
                 final train loss: {losses[-1]}
                 final test loss: {val_losses[-1]}""")
