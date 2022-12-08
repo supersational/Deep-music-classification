@@ -1,3 +1,9 @@
+"""
+Riku Green, Sven Hollowell, Alex Davies
+
+Utility functions for plotting and batch indices
+"""
+
 import os
 import numpy as np
 import random
@@ -7,6 +13,7 @@ from sklearn.metrics import confusion_matrix
 
 
 def plot_confusion_matrix(y_true, y_pred, tag = '', model = 'nomodel'):
+    """Plot a confusion matrix based on real and predicted class labels"""
     fig, ax = plt.subplots(figsize = (6,6))
 
 
@@ -36,6 +43,7 @@ def get_batch_ids(N, batch_size):
     return batch_ids
 
 def plot_losses(train_loss, val_loss, val_epochs, tag = '', title='', model = 'nomodel'):
+    """Plot training and validation losses"""
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 4))
     axes[0].plot((train_loss), label='train')
     axes[1].plot(val_epochs, val_loss, label='test')
@@ -55,6 +63,7 @@ def plot_losses(train_loss, val_loss, val_epochs, tag = '', title='', model = 'n
     plt.close()
 
 def plot_accuracies(train_accuracies, val_accuracies, val_epochs, tag = '', title='', model = 'nomodel'):
+    """Plot training and validation accuracies"""
     plt.plot(train_accuracies, label='Train')
     plt.plot(val_epochs, val_accuracies, label='Test')
     plt.ylabel('Accuracy')

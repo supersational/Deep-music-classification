@@ -1,7 +1,7 @@
 """
 Riku Green, Sven Hollowell, Alex Davies
 
-main.py executes the train of models from music_classification_models.py and uses functions from utils.py
+main.py executes the train of models from models.py and uses functions from utils.py
 """
 
 import os
@@ -39,7 +39,7 @@ if args.wandb:
     import wandb
 
 # Import models and utility functions
-from music_classification_models import DeepMusicCNN, ShallowMusicCNN, FilterMusicCNN
+from models import DeepMusicCNN, ShallowMusicCNN, FilterMusicCNN
 from utils import get_batch_ids, plot_losses, plot_accuracies, plot_confusion_matrix
 
 
